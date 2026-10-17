@@ -56,28 +56,30 @@ export const SettingsModal: React.FC = () => {
 
   return (
     <Dialog open={isSettingsOpen} onOpenChange={setSettingsOpen}>
-      <DialogContent className="sm:max-w-md select-none border-slate-800 bg-slate-900 shadow-2xl">
+      <DialogContent className="sm:max-w-md select-none border-[#444746] bg-[#1e1f20] text-[#e3e3e3] shadow-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-cyan-400" />
-            <DialogTitle>LLM & Inference Configuration</DialogTitle>
+            <Cpu className="w-4 h-4 text-[#a8c7fa]" />
+            <DialogTitle className="text-white text-sm font-semibold">
+              LLM & Inference Configuration
+            </DialogTitle>
           </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs pt-1">
           {/* Provider Selection */}
           <div className="space-y-1.5">
-            <label className="text-slate-400 font-medium">Inference Provider</label>
+            <label className="text-[#8e918f] font-medium">Inference Provider</label>
             <div className="grid grid-cols-3 gap-2">
               {(["ollama", "gemini", "openai"] as LlmProviderType[]).map((prov) => (
                 <button
                   type="button"
                   key={prov}
                   onClick={() => handleProviderChange(prov)}
-                  className={`py-2 px-3 rounded-lg border font-medium text-center capitalize transition-all cursor-pointer ${
+                  className={`py-2 px-3 rounded-xl border text-xs font-medium text-center capitalize transition-all cursor-pointer ${
                     formData.provider === prov
-                      ? "bg-cyan-950/60 border-cyan-500 text-cyan-300 shadow-sm"
-                      : "bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                      ? "bg-[#a8c7fa]/15 border-[#a8c7fa] text-[#a8c7fa] shadow-sm font-semibold"
+                      : "bg-[#131314] border-[#282a2e] text-[#8e918f] hover:border-[#444746] hover:text-[#e3e3e3]"
                   }`}
                 >
                   {prov === "ollama" ? "Ollama (Local)" : prov}
@@ -88,30 +90,30 @@ export const SettingsModal: React.FC = () => {
 
           {/* Endpoint URL */}
           <div className="space-y-1.5">
-            <label className="text-slate-400 font-medium flex items-center gap-1.5">
-              <Server className="w-3.5 h-3.5 text-slate-500" />
+            <label className="text-[#8e918f] font-medium flex items-center gap-1.5">
+              <Server className="w-3.5 h-3.5 text-[#8e918f]" />
               API Endpoint
             </label>
             <Input
               type="text"
               value={formData.endpointUrl}
               onChange={(e) => setFormData({ ...formData, endpointUrl: e.target.value })}
-              className="font-mono text-slate-200"
+              className="font-mono text-xs text-[#e3e3e3] bg-[#131314] border-[#444746] focus:border-[#a8c7fa]"
               required
             />
           </div>
 
           {/* Model Name */}
           <div className="space-y-1.5">
-            <label className="text-slate-400 font-medium flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-slate-500" />
+            <label className="text-[#8e918f] font-medium flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-[#8e918f]" />
               Model Identifier
             </label>
             <Input
               type="text"
               value={formData.modelName}
               onChange={(e) => setFormData({ ...formData, modelName: e.target.value })}
-              className="font-mono text-slate-200"
+              className="font-mono text-xs text-[#e3e3e3] bg-[#131314] border-[#444746] focus:border-[#a8c7fa]"
               required
             />
           </div>
@@ -119,8 +121,8 @@ export const SettingsModal: React.FC = () => {
           {/* API Key (if cloud) */}
           {formData.provider !== "ollama" && (
             <div className="space-y-1.5">
-              <label className="text-slate-400 font-medium flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-amber-400" />
+              <label className="text-[#8e918f] font-medium flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-[#fdd663]" />
                 API Key (Stored locally in secure keyring)
               </label>
               <Input
@@ -128,19 +130,19 @@ export const SettingsModal: React.FC = () => {
                 value={formData.apiKey || ""}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                 placeholder="sk-..."
-                className="font-mono text-slate-200"
+                className="font-mono text-xs text-[#e3e3e3] bg-[#131314] border-[#444746] focus:border-[#a8c7fa]"
               />
             </div>
           )}
 
           {/* Temperature Slider */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-slate-400">
+            <div className="flex justify-between text-[#8e918f]">
               <span className="flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                <Sliders className="w-3.5 h-3.5 text-[#8e918f]" />
                 Temperature (Strict Grounding)
               </span>
-              <span className="font-mono text-cyan-400 font-semibold">{formData.temperature}</span>
+              <span className="font-mono text-[#a8c7fa] font-semibold">{formData.temperature}</span>
             </div>
             <input
               type="range"
@@ -149,7 +151,7 @@ export const SettingsModal: React.FC = () => {
               step="0.1"
               value={formData.temperature}
               onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) })}
-              className="w-full accent-cyan-500 cursor-pointer"
+              className="w-full accent-[#a8c7fa] cursor-pointer"
             />
           </div>
 
@@ -158,13 +160,17 @@ export const SettingsModal: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setSettingsOpen(false)}
+              className="border-[#444746] bg-transparent text-[#8e918f] hover:bg-[#28292c] hover:text-white"
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button
+              type="submit"
+              className="bg-[#a8c7fa] hover:bg-[#d3e3fd] text-[#041e49] font-medium shadow-sm cursor-pointer"
+            >
               {savedSuccess ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5 mr-1" />
                   <span>Saved</span>
                 </>
               ) : (
