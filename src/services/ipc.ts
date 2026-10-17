@@ -38,6 +38,88 @@ let mockSources: SourceDocument[] = [
   },
 ];
 
+let mockDocumentContents: Record<string, string> = {
+  "src-rag-architecture": `# Gemcraft - Architecture & Engineering Roadmap (Reverse-Engineered NotebookLM Desktop)
+
+Gemcraft คือ Desktop Application (สร้างด้วย Tauri 2.0 + Rust + React) ที่โฟกัสการทำ **Source-Grounded RAG** เลียนแบบแกนหลักของ NotebookLM โดยเน้นความปลอดภัย ความเป็นส่วนตัวแบบ Local-first และระบบ Citation ที่แม่นยำสูง
+
+---
+
+## 1. High-Level Architecture Overview
+
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Tauri Desktop Frontend                          │
+│         (React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui)      │
+│                                                                        │
+│  ┌──────────────────┐  ┌─────────────────────┐  ┌───────────────────┐  │
+│  │  Sources Panel   │  │   Chat & Citation   │  │  Studio & Notes   │  │
+│  │ (Upload/Manage)  │  │  (Grounded Answers) │  │  (Saved Snippets) │  │
+│  └────────┬─────────┘  └──────────┬──────────┘  └───────────────────┘  │
+└───────────┼───────────────────────┼────────────────────────────────────┘
+            │ Tauri IPC Commands    │
+┌───────────┴───────────────────────┴────────────────────────────────────┐
+│                         Tauri Rust Core Backend                        │
+│                                                                        │
+│  ┌───────────────────────┐   ┌──────────────────────────────────────┐  │
+│  │ Document Parser       │   │ Vector Store & Indexing              │  │
+│  │ - PDF (lopdf/pdf-extract) │ - SQLite-vec / Local Vector DB       │  │
+│  │ - Markdown / TXT      │   │ - fastembed-rs (Local ONNX)          │  │
+│  │ - Chunking Engine     │   │ - Hybrid Search (BM25 + Dense)       │  │
+│  └───────────────────────┘   └──────────────────────────────────────┘  │
+│                                                                        │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │ Multi-Provider Inference Engine (User Selectable)                │  │
+│  │ 1. Local External Engine: Ollama / LM Studio (localhost HTTP)     │  │
+│  │ 2. Embedded/Pure Rust: Candle / llama-cpp-rs (Optional/Fallback) │  │
+│  │ 3. Cloud Provider: Gemini API / OpenAI / Anthropic (API Keys)    │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────────┘
+
+---
+
+## 2. Key Decisions & Specifications
+
+1. **Core Focus**: ตัดฟีเจอร์ Audio/Podcast และ Slide ออกก่อน เน้นเฉพาะ **Document Ingestion + Strict Grounded RAG + Clickable Source Citations**
+2. **Frontend Stack**:
+   - React 19 + TypeScript + Vite
+   - Tailwind CSS + shadcn/ui + Lucide Icons
+   - 3-Column Workspace (Sources List | Central Chat with Citations | Document/Citation Previewer)
+3. **Rust Core (Tauri 2.0)**:
+   - จัดการ Local Storage, File System, และ Document Chunking
+   - **Local Embeddings**: fastembed-rs (รันโมเดลอย่าง BGE-small / All-MiniLM-L6-v2 ด้วย ONNX Runtime แบบไม่ต้องติดตั้ง Python)
+   - **Vector Database**: sqlite-vec ฝังตัวอยู่ในเครื่อง
+4. **LLM Provider Strategy (All-in-one)**:
+   - ผู้ใช้เลือกได้ตามความต้องการใน Settings:
+     - **Local Ollama / LM Studio**: ปลอดภัย 100% ออฟไลน์
+     - **Cloud API (Gemini / OpenAI / Groq)**: สำหรับผู้ใช้ที่ไม่มี GPU แรงในเครื่อง
+     - **Embedded Rust Model**: ซัพพอร์ตผ่าน Candle ในอนาคต
+`,
+  "src-vector-storage": `# SQLite-vec & FastEmbed Specification Document
+
+## Section 1: In-Process Vector Storage with sqlite-vec
+sqlite-vec is an extremely lightweight, zero-dependency SQLite extension written in C that adds vector search capabilities directly into SQLite databases.
+
+Key Highlights:
+- Zero external daemons required (runs in-process with the desktop application)
+- Native vector data type with cosine distance and L2 distance metrics
+- Seamless integration with rusqlite in the Tauri backend
+- Highly optimized SIMD operations (AVX-512, AVX2, ARM NEON) for instant vector similarity querying
+
+## Section 2: Local Embeddings Pipeline with fastembed-rs
+Fastembed-rs executes quantization-ready embedding models entirely locally using ONNX Runtime.
+
+Supported Models:
+- BAAI/bge-small-en-v1.5 (384 dimensions)
+- sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
+- BAAI/bge-base-en-v1.5 (768 dimensions)
+
+Chunking Configuration:
+- Chunk size: 512 tokens with 64 token overlap
+- Recursive character splitting preserving sentence boundaries and markdown code fences
+- Metadata storage: file name, byte offset, page index, and chunk checksum
+`,
+};
+
 let mockConfig: LlmConfig = {
   provider: "ollama",
   endpointUrl: "http://localhost:11434",
@@ -176,5 +258,30 @@ export const ApiBridge = {
     }
     mockConfig = { ...config };
     return true;
+  },
+
+  async getDocumentContent(sourceId: string): Promise<string> {
+    if (isTauriEnvironment()) {
+      try {
+        return await invoke<string>("get_document_content", { sourceId });
+      } catch {
+        // Fallback to mock text while backend command is under development
+      }
+    }
+    if (mockDocumentContents[sourceId]) {
+      return mockDocumentContents[sourceId];
+    }
+    const source = mockSources.find((s) => s.id === sourceId);
+    return `# Document: ${source?.name || "Uploaded Source"}
+
+This document is indexed in Gemcraft Local Vector Store.
+Total Chunks: ${source?.chunkCount || 1}
+File Size: ${source?.byteSize || 1024} bytes
+
+## Section 1: Introduction
+This local document was ingested and vectorized using fastembed-rs. All text segments are available for grounded RAG queries with citation verification.
+
+## Section 2: Grounded Citations
+Whenever questions are asked about this document, relevant chunks are extracted through SQLite-vec similarity search.`;
   },
 };

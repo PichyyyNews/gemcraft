@@ -5,6 +5,8 @@ import { ApiBridge } from "../services/ipc";
 interface SourceState {
   sources: SourceDocument[];
   activeDocument: SourceDocument | null;
+  documentContents: Record<string, string>;
+  isLoadingContent: boolean;
   isLoading: boolean;
   fetchSources: () => Promise<void>;
   toggleSource: (id: string, selected: boolean) => Promise<void>;
@@ -12,11 +14,14 @@ interface SourceState {
   deleteSource: (id: string) => Promise<void>;
   setActiveDocument: (doc: SourceDocument | null) => void;
   updateSourceStatus: (id: string, status: IngestionStatus, progress: number) => void;
+  fetchDocumentContent: (sourceId: string) => Promise<string>;
 }
 
-export const useSourceStore = create<SourceState>((set) => ({
+export const useSourceStore = create<SourceState>((set, get) => ({
   sources: [],
   activeDocument: null,
+  documentContents: {},
+  isLoadingContent: false,
   isLoading: false,
 
   fetchSources: async () => {
@@ -138,5 +143,24 @@ export const useSourceStore = create<SourceState>((set) => ({
 
   setActiveDocument: (doc: SourceDocument | null) => {
     set({ activeDocument: doc });
+  },
+
+  fetchDocumentContent: async (sourceId: string): Promise<string> => {
+    const cached = get().documentContents[sourceId];
+    if (cached) return cached;
+
+    set({ isLoadingContent: true });
+    try {
+      const content = await ApiBridge.getDocumentContent(sourceId);
+      set((state) => ({
+        documentContents: { ...state.documentContents, [sourceId]: content },
+        isLoadingContent: false,
+      }));
+      return content;
+    } catch (err) {
+      console.error("Failed to fetch document content in store", err);
+      set({ isLoadingContent: false });
+      return "Unable to load document contents from local vector storage.";
+    }
   },
 }));
