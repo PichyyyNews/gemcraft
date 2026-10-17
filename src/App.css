@@ -23,11 +23,59 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  min-height: 100vh;
+  padding: 5vh 2rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
   text-align: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app-theme-dark {
+  background-color: #121214;
+  color: #f3f4f6;
+}
+
+.app-theme-light {
+  background-color: #f9fafb;
+  color: #111827;
+}
+
+.theme-toggle-bar {
+  margin-bottom: 2rem;
+}
+
+.theme-btn {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
+.logo-hero {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.gemcraft-main-logo {
+  filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.2));
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.app-theme-light .gemcraft-main-logo {
+  filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.15));
+}
+
+.gemcraft-main-logo:hover {
+  transform: scale(1.05);
+}
+
+.subtitle {
+  color: #888;
+  margin-top: -0.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
 }
 
 .logo {
