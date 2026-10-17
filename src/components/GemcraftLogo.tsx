@@ -1,6 +1,6 @@
 import React from "react";
-import logoWhite from "../assets/logo-white.svg";
-import logoBlack from "../assets/logo-black.svg";
+import logo1 from "../assets/logo (1).svg";
+import logo2 from "../assets/logo (2).svg";
 
 interface GemcraftLogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   theme?: "dark" | "light";
@@ -9,8 +9,8 @@ interface GemcraftLogoProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 
 /**
  * GemcraftLogo
- * - Default (dark mode / main): logo-white.svg
- * - Light theme: logo-black.svg
+ * - Dark theme (main default): logo (1).svg
+ * - Light theme: logo (2).svg
  */
 export const GemcraftLogo: React.FC<GemcraftLogoProps> = ({
   theme = "dark",
@@ -18,7 +18,7 @@ export const GemcraftLogo: React.FC<GemcraftLogoProps> = ({
   alt = "Gemcraft Logo",
   ...props
 }) => {
-  const src = theme === "dark" ? logoWhite : logoBlack;
+  const src = theme === "dark" ? logo1 : logo2;
   return <img src={src} className={className} alt={alt} {...props} />;
 };
 

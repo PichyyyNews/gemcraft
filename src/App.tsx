@@ -1,60 +1,41 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { GemcraftLogo } from "./components/GemcraftLogo";
-import "./App.css";
+import { useEffect } from "react";
+import { Titlebar } from "./components/layout/Titlebar";
+import { SourcesPanel } from "./components/sources/SourcesPanel";
+import { ChatPanel } from "./components/chat/ChatPanel";
+import { CitationInspector } from "./components/viewer/CitationInspector";
+import { SettingsModal } from "./components/settings/SettingsModal";
+import { useSourceStore } from "./store/useSourceStore";
+import { useSettingsStore } from "./store/useSettingsStore";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-  // Default theme is dark (white logo as main)
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+export function App() {
+  const fetchSources = useSourceStore((state) => state.fetchSources);
+  const fetchConfig = useSettingsStore((state) => state.fetchConfig);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
+  useEffect(() => {
+    fetchSources();
+    fetchConfig();
+  }, [fetchSources, fetchConfig]);
 
   return (
-    <main className={`container app-theme-${theme}`}>
-      <div className="theme-toggle-bar">
-        <button type="button" onClick={toggleTheme} className="theme-btn">
-          Switch to {theme === "dark" ? "Light (Black Logo)" : "Dark (White Logo)"}
-        </button>
+    <div className="h-screen w-screen flex flex-col bg-[#1e1f20] text-slate-100 overflow-hidden font-sans">
+      {/* Top Consolidated Frameless Titlebar */}
+      <Titlebar />
+
+      {/* 3-Column Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column: Knowledge Sources Panel */}
+        <SourcesPanel />
+
+        {/* Center Column: Grounded Chat & Citations */}
+        <ChatPanel />
+
+        {/* Right Column: Citation & Document Inspector */}
+        <CitationInspector />
       </div>
 
-      <div className="logo-hero">
-        <GemcraftLogo
-          theme={theme}
-          className="gemcraft-main-logo"
-          style={{ width: "160px", height: "160px" }}
-        />
-      </div>
-
-      <h1>Gemcraft</h1>
-      <p className="subtitle">
-        Local Reverse-Engineered NotebookLM Desktop
-      </p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p className="greet-msg">{greetMsg}</p>
-    </main>
+      {/* Settings Modal */}
+      <SettingsModal />
+    </div>
   );
 }
 
