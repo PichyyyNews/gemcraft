@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { SourceDocument, SupportedFileType } from "../types/ipc";
+import type { SourceDocument, SupportedFileType, IngestionStatus } from "../types/ipc";
 import { ApiBridge } from "../services/ipc";
 
 interface SourceState {
@@ -11,6 +11,7 @@ interface SourceState {
   addSource: (fileName: string, fileType: SupportedFileType, byteSize: number) => Promise<void>;
   deleteSource: (id: string) => Promise<void>;
   setActiveDocument: (doc: SourceDocument | null) => void;
+  updateSourceStatus: (id: string, status: IngestionStatus, progress: number) => void;
 }
 
 export const useSourceStore = create<SourceState>((set) => ({
@@ -22,7 +23,13 @@ export const useSourceStore = create<SourceState>((set) => ({
     set({ isLoading: true });
     try {
       const sources = await ApiBridge.getSources();
-      set({ sources, isLoading: false });
+      // Ensure all initial sources have ready status
+      const normalizedSources = sources.map((s) => ({
+        ...s,
+        status: s.status || "ready",
+        progress: s.progress || 100,
+      }));
+      set({ sources: normalizedSources, isLoading: false });
     } catch (err) {
       console.error("Failed to fetch sources in store", err);
       set({ isLoading: false });
@@ -40,22 +47,78 @@ export const useSourceStore = create<SourceState>((set) => ({
     }
   },
 
+  updateSourceStatus: (id: string, status: IngestionStatus, progress: number) => {
+    set((state) => ({
+      sources: state.sources.map((s) =>
+        s.id === id ? { ...s, status, progress } : s
+      ),
+    }));
+  },
+
   addSource: async (fileName: string, fileType: SupportedFileType, byteSize: number) => {
-    set({ isLoading: true });
+    const tempId = `src-${Date.now()}`;
+    const initialDoc: SourceDocument = {
+      id: tempId,
+      name: fileName,
+      fileType,
+      byteSize,
+      chunkCount: Math.max(1, Math.floor(byteSize / 512)),
+      uploadedAt: new Date().toISOString(),
+      selected: true,
+      status: "uploading",
+      progress: 25,
+    };
+
+    // Prepend to state immediately for instant feedback
+    set((state) => ({
+      sources: [initialDoc, ...state.sources],
+      activeDocument: initialDoc,
+    }));
+
+    // Stage 1: Uploading (25%) -> Stage 2: Chunking (60%)
+    await new Promise((r) => setTimeout(r, 350));
+    set((state) => ({
+      sources: state.sources.map((s) =>
+        s.id === tempId ? { ...s, status: "chunking", progress: 60 } : s
+      ),
+    }));
+
+    // Stage 2: Chunking (60%) -> Stage 3: Embedding (85%)
+    await new Promise((r) => setTimeout(r, 400));
+    set((state) => ({
+      sources: state.sources.map((s) =>
+        s.id === tempId ? { ...s, status: "embedding", progress: 85 } : s
+      ),
+    }));
+
     try {
       const res = await ApiBridge.ingestDocument(fileName, fileType, byteSize);
       if (res.success && res.source) {
+        const readyDoc: SourceDocument = {
+          ...res.source,
+          status: "ready",
+          progress: 100,
+        };
         set((state) => ({
-          sources: [res.source!, ...state.sources],
-          activeDocument: res.source,
-          isLoading: false,
+          sources: state.sources.map((s) =>
+            s.id === tempId ? readyDoc : s
+          ),
+          activeDocument: readyDoc,
         }));
       } else {
-        set({ isLoading: false });
+        set((state) => ({
+          sources: state.sources.map((s) =>
+            s.id === tempId ? { ...s, status: "error" } : s
+          ),
+        }));
       }
     } catch (err) {
       console.error("Failed to ingest document in store", err);
-      set({ isLoading: false });
+      set((state) => ({
+        sources: state.sources.map((s) =>
+          s.id === tempId ? { ...s, status: "error" } : s
+        ),
+      }));
     }
   },
 

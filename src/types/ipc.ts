@@ -1,5 +1,7 @@
 export type SupportedFileType = "pdf" | "markdown" | "txt";
 
+export type IngestionStatus = "uploading" | "chunking" | "embedding" | "ready" | "error";
+
 export interface SourceDocument {
   id: string;
   name: string;
@@ -8,6 +10,8 @@ export interface SourceDocument {
   chunkCount: number;
   uploadedAt: string;
   selected: boolean;
+  status?: IngestionStatus;
+  progress?: number;
 }
 
 export interface CitationRef {

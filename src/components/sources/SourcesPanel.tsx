@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   FileText,
   FileCode,
@@ -7,11 +7,22 @@ import {
   Trash2,
   Check,
   UploadCloud,
+  Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { useSourceStore } from "../../store/useSourceStore";
 import { useChatStore } from "../../store/useChatStore";
 import { formatBytes } from "../../lib/utils";
-import type { SupportedFileType } from "../../types/ipc";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../common/dialog";
+import { Button } from "../common/button";
+import type { SourceDocument, SupportedFileType } from "../../types/ipc";
 
 export const SourcesPanel: React.FC = () => {
   const {
@@ -22,6 +33,9 @@ export const SourcesPanel: React.FC = () => {
     setActiveDocument,
   } = useSourceStore();
   const { setActiveCitation } = useChatStore();
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<SourceDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = sources.filter((s) => s.selected).length;
@@ -32,16 +46,58 @@ export const SourcesPanel: React.FC = () => {
     sources.forEach((s) => toggleSource(s.id, nextState));
   };
 
+  const processFile = (file: File) => {
+    const lowerName = file.name.toLowerCase();
+    let fileType: SupportedFileType | null = null;
+
+    if (lowerName.endsWith(".pdf")) fileType = "pdf";
+    else if (lowerName.endsWith(".md")) fileType = "markdown";
+    else if (lowerName.endsWith(".txt")) fileType = "txt";
+
+    if (!fileType) {
+      alert("รองรับเฉพาะไฟล์ .pdf, .md, หรือ .txt เท่านั้น");
+      return;
+    }
+
+    addSource(file.name, fileType, file.size);
+  };
+
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    let fileType: SupportedFileType = "txt";
-    if (file.name.endsWith(".pdf")) fileType = "pdf";
-    else if (file.name.endsWith(".md")) fileType = "markdown";
-
-    addSource(file.name, fileType, file.size);
+    processFile(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Drag & Drop Handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => processFile(file));
+    }
   };
 
   const handleQuickAddSample = () => {
@@ -65,13 +121,83 @@ export const SourcesPanel: React.FC = () => {
     }
   };
 
-  const handleSelectDoc = (src: (typeof sources)[0]) => {
+  const handleSelectDoc = (src: SourceDocument) => {
     setActiveDocument(src);
     setActiveCitation(null);
   };
 
+  const confirmDelete = async () => {
+    if (sourceToDelete) {
+      await deleteSource(sourceToDelete.id);
+      setSourceToDelete(null);
+    }
+  };
+
+  const renderStatusBadge = (src: SourceDocument) => {
+    if (!src.status || src.status === "ready") {
+      return (
+        <div className="flex items-center justify-between text-[11px] text-[#8e918f] pl-6 font-sans">
+          <span>{src.chunkCount} chunks</span>
+          <span>{formatBytes(src.byteSize)}</span>
+        </div>
+      );
+    }
+
+    if (src.status === "error") {
+      return (
+        <div className="flex items-center gap-1.5 text-[11px] text-[#f28b82] pl-6 font-sans">
+          <AlertTriangle className="w-3 h-3" />
+          <span>Ingestion failed</span>
+        </div>
+      );
+    }
+
+    const stageLabels: Record<string, string> = {
+      uploading: "Uploading file...",
+      chunking: "Extracting chunks...",
+      embedding: "Computing embeddings...",
+    };
+
+    return (
+      <div className="pl-6 space-y-1.5 pt-0.5">
+        <div className="flex items-center justify-between text-[10px] text-[#a8c7fa] font-mono">
+          <span className="flex items-center gap-1">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            {stageLabels[src.status] || "Processing..."}
+          </span>
+          <span>{src.progress || 50}%</span>
+        </div>
+        <div className="w-full h-1 bg-[#131314] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#a8c7fa] to-[#c5bfff] transition-all duration-300 rounded-full"
+            style={{ width: `${src.progress || 50}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <aside className="w-72 h-full border-r border-[#282a2e] bg-[#1e1f20] flex flex-col shrink-0 select-none">
+    <aside
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`w-72 h-full border-r border-[#282a2e] bg-[#1e1f20] flex flex-col shrink-0 select-none relative transition-all ${
+        isDragging ? "ring-2 ring-inset ring-[#a8c7fa]" : ""
+      }`}
+    >
+      {/* Drag & Drop Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-30 bg-[#1e1f20]/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-[#a8c7fa] m-2 rounded-2xl animate-in fade-in duration-150">
+          <div className="w-12 h-12 rounded-full bg-[#28292c] flex items-center justify-center text-[#a8c7fa] mb-3 shadow-lg">
+            <UploadCloud className="w-6 h-6 animate-bounce" />
+          </div>
+          <h4 className="text-sm font-medium text-[#e3e3e3]">Drop files to index</h4>
+          <p className="text-[11px] text-[#8e918f] mt-1">Supports PDF, Markdown, and TXT</p>
+        </div>
+      )}
+
       {/* Panel Top Header */}
       <div className="p-4 border-b border-[#282a2e] flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -90,7 +216,7 @@ export const SourcesPanel: React.FC = () => {
           )}
         </div>
 
-        {/* NotebookLM Signature "+ Add source" Button */}
+        {/* NotebookLM "+ Add sources" Button */}
         <input
           type="file"
           ref={fileInputRef}
@@ -116,7 +242,7 @@ export const SourcesPanel: React.FC = () => {
             </div>
             <p className="text-xs font-medium text-[#e3e3e3]">No sources added</p>
             <p className="text-[11px] text-[#8e918f] mt-1 leading-relaxed">
-              Upload PDF or Markdown to ground AI answers
+              Drag & drop files here or click Add sources
             </p>
             <button
               onClick={handleQuickAddSample}
@@ -166,21 +292,18 @@ export const SourcesPanel: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Delete source button */}
+                {/* Delete button (Opens confirmation dialog) */}
                 <button
-                  onClick={() => deleteSource(src.id)}
+                  onClick={() => setSourceToDelete(src)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-[#8e918f] hover:text-[#f28b82] transition-all rounded hover:bg-[#37393e] cursor-pointer"
                   title="Remove Source"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
 
-              {/* Subtitle info */}
-              <div className="flex items-center justify-between text-[11px] text-[#8e918f] pl-6">
-                <span>{src.chunkCount} chunks</span>
-                <span>{formatBytes(src.byteSize)}</span>
-              </div>
+              {/* Status and Progress */}
+              {renderStatusBadge(src)}
             </div>
           ))
         )}
@@ -196,6 +319,36 @@ export const SourcesPanel: React.FC = () => {
           + Quick Sample
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!sourceToDelete} onOpenChange={(open) => !open && setSourceToDelete(null)}>
+        <DialogContent className="sm:max-w-sm border-[#282a2e] bg-[#1e1f20] text-[#e3e3e3]">
+          <DialogHeader>
+            <DialogTitle>Remove source from notebook?</DialogTitle>
+            <DialogDescription className="text-xs text-[#8e918f] pt-1 leading-relaxed">
+              Are you sure you want to remove{" "}
+              <strong className="text-[#e3e3e3] font-medium">{sourceToDelete?.name}</strong>?
+              This will remove its text chunks and vector embeddings from local memory.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSourceToDelete(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={confirmDelete}
+            >
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 };

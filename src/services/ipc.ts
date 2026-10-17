@@ -22,6 +22,8 @@ let mockSources: SourceDocument[] = [
     chunkCount: 12,
     uploadedAt: new Date(Date.now() - 3600000).toISOString(),
     selected: true,
+    status: "ready",
+    progress: 100,
   },
   {
     id: "src-vector-storage",
@@ -31,6 +33,8 @@ let mockSources: SourceDocument[] = [
     chunkCount: 38,
     uploadedAt: new Date(Date.now() - 7200000).toISOString(),
     selected: true,
+    status: "ready",
+    progress: 100,
   },
 ];
 
