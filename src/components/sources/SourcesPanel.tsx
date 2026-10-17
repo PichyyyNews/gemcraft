@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useSourceStore } from "../../store/useSourceStore";
 import { useChatStore } from "../../store/useChatStore";
+import { Button } from "../common/button";
+import { Badge } from "../common/badge";
 import { formatBytes } from "../../lib/utils";
 import type { SupportedFileType } from "../../types/ipc";
 
@@ -79,9 +81,9 @@ export const SourcesPanel: React.FC = () => {
           <h2 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
             Knowledge Sources
           </h2>
-          <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+          <Badge variant="secondary" className="px-1.5 py-0">
             {sources.length}
-          </span>
+          </Badge>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -92,14 +94,14 @@ export const SourcesPanel: React.FC = () => {
             accept=".pdf,.md,.txt"
             className="hidden"
           />
-          <button
+          <Button
+            size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition-all shadow-sm shadow-cyan-600/30 cursor-pointer"
             title="Upload PDF, Markdown, or TXT"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Upload</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -165,13 +167,15 @@ export const SourcesPanel: React.FC = () => {
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => deleteSource(src.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-rose-400 transition-all rounded hover:bg-slate-800 cursor-pointer"
+                  className="opacity-0 group-hover:opacity-100 h-6 w-6 text-slate-500 hover:text-rose-400"
                   title="Remove Source"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-500 pl-6 font-mono">

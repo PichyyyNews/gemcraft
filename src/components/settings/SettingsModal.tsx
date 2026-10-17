@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { X, Check, Server, Key, Sliders, Cpu } from "lucide-react";
+import { Check, Server, Key, Sliders, Cpu } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../common/dialog";
+import { Button } from "../common/button";
+import { Input } from "../common/input";
 import type { LlmConfig, LlmProviderType } from "../../types/ipc";
 
 export const SettingsModal: React.FC = () => {
@@ -11,8 +20,6 @@ export const SettingsModal: React.FC = () => {
   useEffect(() => {
     setFormData({ ...config });
   }, [config, isSettingsOpen]);
-
-  if (!isSettingsOpen) return null;
 
   const handleProviderChange = (provider: LlmProviderType) => {
     let endpointUrl = formData.endpointUrl;
@@ -48,24 +55,16 @@ export const SettingsModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+    <Dialog open={isSettingsOpen} onOpenChange={setSettingsOpen}>
+      <DialogContent className="sm:max-w-md select-none border-slate-800 bg-slate-900 shadow-2xl">
+        <DialogHeader>
           <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-semibold text-slate-100">LLM & Inference Configuration</h3>
+            <DialogTitle>LLM & Inference Configuration</DialogTitle>
           </div>
-          <button
-            onClick={() => setSettingsOpen(false)}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        </DialogHeader>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs pt-1">
           {/* Provider Selection */}
           <div className="space-y-1.5">
             <label className="text-slate-400 font-medium">Inference Provider</label>
@@ -93,11 +92,11 @@ export const SettingsModal: React.FC = () => {
               <Server className="w-3.5 h-3.5 text-slate-500" />
               API Endpoint
             </label>
-            <input
+            <Input
               type="text"
               value={formData.endpointUrl}
               onChange={(e) => setFormData({ ...formData, endpointUrl: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:outline-none font-mono text-slate-200"
+              className="font-mono text-slate-200"
               required
             />
           </div>
@@ -108,11 +107,11 @@ export const SettingsModal: React.FC = () => {
               <Cpu className="w-3.5 h-3.5 text-slate-500" />
               Model Identifier
             </label>
-            <input
+            <Input
               type="text"
               value={formData.modelName}
               onChange={(e) => setFormData({ ...formData, modelName: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:outline-none font-mono text-slate-200"
+              className="font-mono text-slate-200"
               required
             />
           </div>
@@ -124,12 +123,12 @@ export const SettingsModal: React.FC = () => {
                 <Key className="w-3.5 h-3.5 text-amber-400" />
                 API Key (Stored locally in secure keyring)
               </label>
-              <input
+              <Input
                 type="password"
                 value={formData.apiKey || ""}
                 onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
                 placeholder="sk-..."
-                className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:outline-none font-mono text-slate-200"
+                className="font-mono text-slate-200"
               />
             </div>
           )}
@@ -154,19 +153,15 @@ export const SettingsModal: React.FC = () => {
             />
           </div>
 
-          {/* Footer Actions */}
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
-            <button
+          <DialogFooter className="pt-2">
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setSettingsOpen(false)}
-              className="px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
             >
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition-all shadow-sm shadow-cyan-600/30 cursor-pointer"
-            >
+            </Button>
+            <Button type="submit">
               {savedSuccess ? (
                 <>
                   <Check className="w-3.5 h-3.5" />
@@ -175,10 +170,10 @@ export const SettingsModal: React.FC = () => {
               ) : (
                 <span>Save Configuration</span>
               )}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

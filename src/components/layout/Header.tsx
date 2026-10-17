@@ -1,6 +1,8 @@
 import React from "react";
 import { Cpu, Settings, ShieldCheck, Terminal } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore";
+import { Button } from "../common/button";
+import { Badge } from "../common/badge";
 import { ApiBridge } from "../../services/ipc";
 
 export const Header: React.FC = () => {
@@ -16,9 +18,7 @@ export const Header: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-slate-100 text-sm tracking-tight">Gemcraft</span>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/60">
-              RAG Studio
-            </span>
+            <Badge variant="cyan">RAG Studio</Badge>
           </div>
           <p className="text-[11px] text-slate-400">Local-first Source Grounded Intelligence</p>
         </div>
@@ -26,29 +26,36 @@ export const Header: React.FC = () => {
 
       <div className="flex items-center gap-3">
         {/* Environment Badge */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs">
+        <Badge
+          variant="secondary"
+          className="flex items-center gap-1.5 py-1 px-2.5"
+        >
           <ShieldCheck className={`w-3.5 h-3.5 ${isTauri ? "text-emerald-400" : "text-amber-400"}`} />
           <span className="text-slate-300 font-mono text-[11px]">
             {isTauri ? "Tauri IPC Native" : "Mock Browser Mode"}
           </span>
-        </div>
+        </Badge>
 
         {/* LLM Engine Indicator */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 text-xs">
+        <Badge
+          variant="secondary"
+          className="flex items-center gap-1.5 py-1 px-2.5"
+        >
           <Cpu className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-slate-300 capitalize">{config.provider}:</span>
           <span className="font-mono text-cyan-300 font-medium text-[11px]">{config.modelName}</span>
-        </div>
+        </Badge>
 
         {/* Settings Button */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setSettingsOpen(true)}
-          className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer border border-transparent hover:border-slate-700"
           title="Configuration & LLM Settings"
           aria-label="Open Settings"
         >
           <Settings className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </header>
   );
