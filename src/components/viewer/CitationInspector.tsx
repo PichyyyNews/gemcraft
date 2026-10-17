@@ -1,11 +1,13 @@
-import React from "react";
-import { X, ExternalLink, Bookmark, Sparkles, BookOpen } from "lucide-react";
+import React, { useState } from "react";
+import { X, Sparkles, Copy, Check, FileText } from "lucide-react";
 import { useChatStore } from "../../store/useChatStore";
 import { useSourceStore } from "../../store/useSourceStore";
+import { formatBytes } from "../../lib/utils";
 
 export const CitationInspector: React.FC = () => {
   const { activeCitation, setActiveCitation } = useChatStore();
   const { activeDocument, setActiveDocument } = useSourceStore();
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   if (!activeCitation && !activeDocument) {
     return null;
@@ -16,26 +18,24 @@ export const CitationInspector: React.FC = () => {
     setActiveDocument(null);
   };
 
-  const title = activeCitation
-    ? `Citation [^${activeCitation.citationIndex}] Evidence`
-    : activeDocument?.name || "Document Preview";
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedSnippet(true);
+    setTimeout(() => setCopiedSnippet(false), 1500);
+  };
 
   return (
-    <aside className="w-96 h-full border-l border-slate-800 bg-slate-900/90 flex flex-col shrink-0 animate-in slide-in-from-right duration-200 z-10 shadow-2xl select-none">
-      {/* Header */}
-      <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+    <aside className="w-80 h-full border-l border-[#282a2e] bg-[#1e1f20] flex flex-col shrink-0 animate-in slide-in-from-right duration-150 z-10 select-none text-[#e3e3e3]">
+      {/* Studio Header */}
+      <div className="p-4 border-b border-[#282a2e] flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {activeCitation ? (
-            <Bookmark className="w-4 h-4 text-cyan-400" />
-          ) : (
-            <BookOpen className="w-4 h-4 text-blue-400" />
-          )}
-          <h3 className="text-xs font-semibold text-slate-200 tracking-wide">{title}</h3>
+          <Sparkles className="w-4 h-4 text-[#c5bfff]" />
+          <h3 className="text-sm font-medium text-[#e3e3e3]">Studio & Citations</h3>
         </div>
         <button
           onClick={handleClose}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Close Inspector"
+          className="p-1.5 rounded-full text-[#8e918f] hover:text-white hover:bg-[#2c2d30] transition-colors cursor-pointer"
+          title="Close panel"
         >
           <X className="w-4 h-4" />
         </button>
@@ -43,74 +43,96 @@ export const CitationInspector: React.FC = () => {
 
       {/* Body Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Source metadata card */}
-        <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 space-y-2">
-          <div className="text-[11px] font-mono text-cyan-400 flex items-center justify-between">
-            <span>SOURCE FILE</span>
-            {activeCitation?.relevanceScore && (
-              <span className="text-emerald-400 font-semibold">
-                Match: {(activeCitation.relevanceScore * 100).toFixed(0)}%
-              </span>
-            )}
-          </div>
-          <div className="text-xs font-medium text-slate-200 break-all flex items-center gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span>{activeCitation?.sourceName || activeDocument?.name}</span>
-          </div>
-          {activeCitation?.pageNumber && (
-            <div className="text-[11px] text-slate-400">
-              Page / Section:{" "}
-              <span className="text-slate-200 font-mono">Page {activeCitation.pageNumber}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Grounded Citation Snippet Highlight */}
-        {activeCitation && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Grounded Excerpt from Local Vector Store:</span>
-            </div>
-
-            <blockquote className="p-3.5 rounded-lg bg-cyan-950/20 border-l-2 border-cyan-500 text-xs text-slate-200 leading-relaxed font-mono shadow-inner select-text">
-              "{activeCitation.snippet}"
-            </blockquote>
-          </div>
-        )}
-
-        {/* Document Overview Card */}
-        {activeDocument && !activeCitation && (
+        {activeCitation ? (
           <div className="space-y-3">
-            <div className="p-3 rounded-lg bg-slate-950/40 border border-slate-800 space-y-1.5 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Total Chunks:</span>
-                <span className="font-mono text-slate-200">{activeDocument.chunkCount}</span>
+            {/* Citation Pill Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-[#a8c7fa] text-[#041e49] flex items-center justify-center text-xs font-mono font-bold shadow-sm">
+                  {activeCitation.citationIndex}
+                </div>
+                <span className="text-xs font-medium text-[#e3e3e3]">Citation Source</span>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>File Size:</span>
-                <span className="font-mono text-slate-200">{activeDocument.byteSize} bytes</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Ingested:</span>
-                <span className="font-mono text-slate-200">
-                  {new Date(activeDocument.uploadedAt).toLocaleTimeString()}
+              {activeCitation.relevanceScore && (
+                <span className="text-[11px] font-mono text-[#7ada94]">
+                  {(activeCitation.relevanceScore * 100).toFixed(0)}% match
                 </span>
+              )}
+            </div>
+
+            {/* Document metadata card */}
+            <div className="p-3 rounded-xl bg-[#131314] border border-[#282a2e] space-y-1">
+              <div className="text-xs font-medium text-[#e3e3e3] truncate flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#a8c7fa] shrink-0" />
+                <span className="truncate">{activeCitation.sourceName}</span>
+              </div>
+              {activeCitation.pageNumber && (
+                <div className="text-[11px] text-[#8e918f]">
+                  Page: <span className="text-[#c4c7c5] font-mono">{activeCitation.pageNumber}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quoted Passage */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-[#8e918f]">
+                <span>GROUNDED PASSAGE</span>
+                <button
+                  onClick={() => handleCopy(activeCitation.snippet)}
+                  className="hover:text-[#e3e3e3] transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedSnippet ? (
+                    <>
+                      <Check className="w-3 h-3 text-[#7ada94]" />
+                      <span className="text-[#7ada94]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <blockquote className="p-3.5 rounded-xl bg-[#131314] border border-[#282a2e] text-xs text-[#e3e3e3] leading-relaxed font-sans select-text">
+                "{activeCitation.snippet}"
+              </blockquote>
+            </div>
+          </div>
+        ) : activeDocument ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#a8c7fa]" />
+              <h4 className="text-xs font-medium text-[#e3e3e3] truncate">{activeDocument.name}</h4>
+            </div>
+
+            <div className="p-3 rounded-xl bg-[#131314] border border-[#282a2e] space-y-2 text-xs">
+              <div className="flex justify-between text-[#8e918f]">
+                <span>Chunks:</span>
+                <span className="text-[#e3e3e3] font-mono">{activeDocument.chunkCount}</span>
+              </div>
+              <div className="flex justify-between text-[#8e918f]">
+                <span>Size:</span>
+                <span className="text-[#e3e3e3] font-mono">{formatBytes(activeDocument.byteSize)}</span>
+              </div>
+              <div className="flex justify-between text-[#8e918f]">
+                <span>Status:</span>
+                <span className="text-[#7ada94] font-medium">Indexed & Active</span>
               </div>
             </div>
 
-            <div className="text-xs text-slate-400 leading-relaxed">
-              เอกสารนี้ถูกประมวลผลเป็น Vector Chunks เรียบร้อยแล้ว ข้อความทั้งหมดถูกเก็บใน SQLite-vec
-              และพร้อมตอบคำถามโดยอ้างอิงแหล่งที่มา
-            </div>
+            <p className="text-xs text-[#8e918f] leading-relaxed">
+              เอกสารนี้ถูกทำ Index ใน Vector Database เรียบร้อยแล้ว เมื่อถามคำถาม ระบบจะดึงข้อความที่ตรงกันมาอ้างอิงเป็น Citation อัตโนมัติ
+            </p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/40 text-[11px] text-slate-500 flex items-center justify-between">
-        <span>Citation Verification: OK</span>
-        <span className="font-mono text-[10px]">NotebookLM Spec</span>
+      <div className="p-3 border-t border-[#282a2e] bg-[#1e1f20] text-[11px] text-[#8e918f] flex items-center justify-between">
+        <span>Grounded Vector Store</span>
+        <span className="font-mono text-[10px]">NotebookLM Core</span>
       </div>
     </aside>
   );

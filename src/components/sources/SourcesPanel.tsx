@@ -5,15 +5,11 @@ import {
   Files,
   Plus,
   Trash2,
-  CheckCircle2,
-  Circle,
-  Database,
-  Layers,
+  Check,
+  UploadCloud,
 } from "lucide-react";
 import { useSourceStore } from "../../store/useSourceStore";
 import { useChatStore } from "../../store/useChatStore";
-import { Button } from "../common/button";
-import { Badge } from "../common/badge";
 import { formatBytes } from "../../lib/utils";
 import type { SupportedFileType } from "../../types/ipc";
 
@@ -29,10 +25,12 @@ export const SourcesPanel: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = sources.filter((s) => s.selected).length;
-  const totalChunks = sources.reduce(
-    (acc, curr) => (curr.selected ? acc + curr.chunkCount : acc),
-    0
-  );
+  const isAllSelected = sources.length > 0 && selectedCount === sources.length;
+
+  const handleToggleAll = () => {
+    const nextState = !isAllSelected;
+    sources.forEach((s) => toggleSource(s.id, nextState));
+  };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,11 +57,11 @@ export const SourcesPanel: React.FC = () => {
   const getFileIcon = (type: string) => {
     switch (type) {
       case "pdf":
-        return <FileText className="w-4 h-4 text-rose-400" />;
+        return <FileText className="w-4 h-4 text-[#f28b82]" />;
       case "markdown":
-        return <FileCode className="w-4 h-4 text-sky-400" />;
+        return <FileCode className="w-4 h-4 text-[#a8c7fa]" />;
       default:
-        return <Files className="w-4 h-4 text-emerald-400" />;
+        return <Files className="w-4 h-4 text-[#81c995]" />;
     }
   };
 
@@ -73,113 +71,114 @@ export const SourcesPanel: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 h-full border-r border-slate-800 bg-slate-900/60 flex flex-col shrink-0 select-none">
-      {/* Panel Header */}
-      <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Database className="w-4 h-4 text-cyan-400" />
-          <h2 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
-            Knowledge Sources
-          </h2>
-          <Badge variant="secondary" className="px-1.5 py-0">
-            {sources.length}
-          </Badge>
+    <aside className="w-72 h-full border-r border-[#282a2e] bg-[#1e1f20] flex flex-col shrink-0 select-none">
+      {/* Panel Top Header */}
+      <div className="p-4 border-b border-[#282a2e] flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-medium text-[#e3e3e3]">Sources</h2>
+            <span className="text-xs text-[#8e918f] font-mono">({sources.length})</span>
+          </div>
+
+          {sources.length > 0 && (
+            <button
+              onClick={handleToggleAll}
+              className="text-[11px] text-[#a8c7fa] hover:text-[#d3e3fd] transition-colors cursor-pointer"
+            >
+              {isAllSelected ? "Deselect all" : "Select all"}
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileInputChange}
-            accept=".pdf,.md,.txt"
-            className="hidden"
-          />
-          <Button
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            title="Upload PDF, Markdown, or TXT"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Upload</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Grounding Stats Summary */}
-      <div className="px-3.5 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-1.5">
-          <Layers className="w-3.5 h-3.5 text-slate-500" />
-          <span>Active Grounding:</span>
-        </div>
-        <div className="flex items-center gap-2 font-mono text-[11px]">
-          <span className="text-cyan-400 font-semibold">{selectedCount}</span> of {sources.length} docs
-          <span className="text-slate-600">•</span>
-          <span className="text-slate-300">{totalChunks} chunks</span>
-        </div>
+        {/* NotebookLM Signature "+ Add source" Button */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+          accept=".pdf,.md,.txt"
+          className="hidden"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-full border border-[#444746] bg-[#131314] hover:bg-[#28292c] hover:border-[#8e918f] text-xs font-medium text-[#e3e3e3] hover:text-white transition-all shadow-sm cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#a8c7fa]" />
+          <span>Add sources</span>
+        </button>
       </div>
 
       {/* Sources List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {sources.length === 0 ? (
-          <div className="h-48 flex flex-col items-center justify-center text-center p-4">
-            <Files className="w-8 h-8 text-slate-700 mb-2" />
-            <p className="text-xs text-slate-400">No sources indexed yet.</p>
-            <p className="text-[11px] text-slate-500 mt-1">Upload a PDF or Markdown file to start grounding.</p>
+          <div className="h-56 flex flex-col items-center justify-center text-center p-4">
+            <div className="w-10 h-10 rounded-full bg-[#131314] border border-[#282a2e] flex items-center justify-center text-[#8e918f] mb-3">
+              <UploadCloud className="w-5 h-5 text-[#8e918f]" />
+            </div>
+            <p className="text-xs font-medium text-[#e3e3e3]">No sources added</p>
+            <p className="text-[11px] text-[#8e918f] mt-1 leading-relaxed">
+              Upload PDF or Markdown to ground AI answers
+            </p>
             <button
               onClick={handleQuickAddSample}
-              className="mt-3 text-xs text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+              className="mt-3 text-xs text-[#a8c7fa] hover:underline cursor-pointer"
             >
-              Add sample document
+              + Add sample source
             </button>
           </div>
         ) : (
           sources.map((src) => (
             <div
               key={src.id}
-              className={`group relative rounded-lg border p-2.5 transition-all text-xs flex flex-col gap-1.5 ${
+              className={`group relative rounded-xl border p-2.5 transition-all text-xs flex flex-col gap-1.5 ${
                 src.selected
-                  ? "bg-slate-800/50 border-cyan-800/50 hover:border-cyan-600/60 shadow-sm"
-                  : "bg-slate-900/40 border-slate-800/60 opacity-60 hover:opacity-90"
+                  ? "bg-[#28292c] border-[#444746] text-[#e3e3e3] shadow-sm"
+                  : "bg-[#131314]/80 border-[#282a2e] text-[#8e918f] opacity-60 hover:opacity-100"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2.5">
+                {/* Google Material Checkbox */}
                 <button
                   onClick={() => toggleSource(src.id, !src.selected)}
-                  className="mt-0.5 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
-                  title={src.selected ? "Disable from context" : "Include in context"}
+                  className="mt-0.5 text-[#8e918f] hover:text-[#a8c7fa] transition-colors cursor-pointer shrink-0"
+                  title={src.selected ? "Exclude from grounding" : "Include in grounding"}
                 >
-                  {src.selected ? (
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400 fill-cyan-950" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-slate-600" />
-                  )}
+                  <div
+                    className={`w-4 h-4 rounded-sm flex items-center justify-center transition-all ${
+                      src.selected
+                        ? "bg-[#a8c7fa] text-[#041e49]"
+                        : "border border-[#8e918f] bg-transparent"
+                    }`}
+                  >
+                    {src.selected && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
                 </button>
 
+                {/* File Title & Icon */}
                 <div
                   className="flex-1 min-w-0 cursor-pointer"
                   onClick={() => handleSelectDoc(src)}
                 >
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     {getFileIcon(src.fileType)}
-                    <span className="font-medium text-slate-200 truncate hover:text-cyan-300 transition-colors">
+                    <span className="font-medium text-xs truncate hover:text-[#a8c7fa] transition-colors">
                       {src.name}
                     </span>
                   </div>
                 </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
+                {/* Delete source button */}
+                <button
                   onClick={() => deleteSource(src.id)}
-                  className="opacity-0 group-hover:opacity-100 h-6 w-6 text-slate-500 hover:text-rose-400"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-[#8e918f] hover:text-[#f28b82] transition-all rounded hover:bg-[#37393e] cursor-pointer"
                   title="Remove Source"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </Button>
+                </button>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pl-6 font-mono">
-                <span>{src.chunkCount} vector chunks</span>
+              {/* Subtitle info */}
+              <div className="flex items-center justify-between text-[11px] text-[#8e918f] pl-6">
+                <span>{src.chunkCount} chunks</span>
                 <span>{formatBytes(src.byteSize)}</span>
               </div>
             </div>
@@ -187,14 +186,14 @@ export const SourcesPanel: React.FC = () => {
         )}
       </div>
 
-      {/* Quick Ingest Footer Helper */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/60 flex items-center justify-between text-[11px] text-slate-400">
-        <span>Embeddings: BGE-Small (Local)</span>
+      {/* Panel Bottom Footer */}
+      <div className="p-3 border-t border-[#282a2e] bg-[#1e1f20] flex items-center justify-between text-[11px] text-[#8e918f]">
+        <span>{selectedCount} of {sources.length} active</span>
         <button
           onClick={handleQuickAddSample}
-          className="text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
+          className="text-[#a8c7fa] hover:text-[#d3e3fd] transition-colors cursor-pointer"
         >
-          + Add Sample
+          + Quick Sample
         </button>
       </div>
     </aside>
