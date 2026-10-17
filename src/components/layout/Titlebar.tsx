@@ -34,17 +34,16 @@ export const Titlebar: React.FC = () => {
     >
       {/* Left side: Logo & Menus */}
       <div className="flex items-center gap-1.5 pointer-events-auto" data-tauri-drag-region>
-        {/* App Logo */}
+        {/* App Logo - logo (1).svg */}
         <div
-          className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-[#282a2e]/50 cursor-pointer transition-colors mr-1"
+          className="flex items-center justify-center p-1 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors mr-1.5"
           title="Gemcraft"
         >
           <img
-            src="/logo-white.svg"
-            alt="Gemcraft"
-            className="w-4 h-4 object-contain"
+            src="/logo (1).svg"
+            alt="Gemcraft Logo"
+            className="w-5 h-5 object-contain"
           />
-          <span className="font-medium text-[#e3e3e3] text-[13px] tracking-tight">Gemcraft</span>
         </div>
 
         {/* Window Menu Items */}

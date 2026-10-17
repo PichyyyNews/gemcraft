@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-[#2b2938] flex items-center justify-center p-1 border border-[#484461]/40 shadow-sm">
-            <img src="/logo-white.svg" alt="Gemcraft" className="w-5 h-5 object-contain" />
+            <img src="/logo (1).svg" alt="Gemcraft" className="w-5 h-5 object-contain" />
           </div>
 
           {isEditingTitle ? (
