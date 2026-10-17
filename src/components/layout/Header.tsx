@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { ApiBridge } from "../../services/ipc";
-import { GemcraftLogo } from "../common/GemcraftLogo";
 
 export const Header: React.FC = () => {
   const { config, setSettingsOpen } = useSettingsStore();
@@ -29,7 +28,6 @@ export const Header: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2">
-          <GemcraftLogo className="w-6 h-6 object-contain" alt="Gemcraft" />
 
           {isEditingTitle ? (
             <input
