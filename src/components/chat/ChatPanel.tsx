@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   ArrowUp,
+  Square,
   Sparkles,
   Copy,
   Check,
@@ -8,10 +9,19 @@ import {
 } from "lucide-react";
 import { useChatStore } from "../../store/useChatStore";
 import { useSourceStore } from "../../store/useSourceStore";
-import type { ChatMessage, CitationRef } from "../../types/ipc";
+import { MarkdownContent } from "./MarkdownContent";
+import type { CitationRef } from "../../types/ipc";
 
 export const ChatPanel: React.FC = () => {
-  const { messages, isGenerating, sendMessage, setActiveCitation, activeCitation } = useChatStore();
+  const {
+    messages,
+    isGenerating,
+    streamingMessageId,
+    sendMessage,
+    stopGenerating,
+    setActiveCitation,
+    activeCitation,
+  } = useChatStore();
   const { sources, setActiveDocument } = useSourceStore();
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -50,68 +60,6 @@ export const ChatPanel: React.FC = () => {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const renderMessageContent = (msg: ChatMessage) => {
-    if (msg.role === "user") {
-      return <p className="text-sm text-[#e3e3e3] leading-relaxed whitespace-pre-wrap">{msg.content}</p>;
-    }
-
-    // Parse citation brackets like [^1], [^2]
-    const parts = msg.content.split(/(\[\^[0-9]+\])/g);
-
-    return (
-      <div className="text-sm text-[#e3e3e3] leading-relaxed space-y-3 font-sans">
-        <p className="whitespace-pre-wrap leading-relaxed">
-          {parts.map((part, index) => {
-            const match = part.match(/\[\^([0-9]+)\]/);
-            if (match) {
-              const citationIndex = parseInt(match[1], 10);
-              const citation = msg.citations?.find((c) => c.citationIndex === citationIndex);
-              const isSelected = activeCitation?.citationIndex === citationIndex;
-
-              return (
-                <button
-                  key={index}
-                  onClick={() => citation && handleSelectCitation(citation)}
-                  className={`inline-flex items-center justify-center w-5 h-5 mx-1 rounded-full text-[10px] font-mono font-bold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-[#a8c7fa] text-[#041e49] ring-2 ring-[#a8c7fa]/40"
-                      : "bg-[#28292c] text-[#c4c7c5] border border-[#444746] hover:bg-[#37393e] hover:text-white"
-                  }`}
-                  title={citation ? `${citation.sourceName} (Page ${citation.pageNumber || 1})` : `Citation ${citationIndex}`}
-                >
-                  {citationIndex}
-                </button>
-              );
-            }
-            return part;
-          })}
-        </p>
-
-        {/* Action icons bar below message */}
-        <div className="pt-2 flex items-center justify-between border-t border-[#282a2e]/60">
-          <div className="flex items-center gap-1.5">
-            {msg.citations && msg.citations.length > 0 && (
-              <div className="flex items-center gap-1 text-[11px] text-[#8e918f]">
-                <Layers className="w-3 h-3 text-[#a8c7fa]" />
-                <span>{msg.citations.length} citation(s)</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => handleCopyMessage(msg.id, msg.content)}
-              className="p-1.5 rounded-full hover:bg-[#28292c] text-[#8e918f] hover:text-[#e3e3e3] transition-colors cursor-pointer"
-              title="Copy to clipboard"
-            >
-              {copiedId === msg.id ? <Check className="w-3.5 h-3.5 text-[#7ada94]" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const starterCards = [
     { title: "Study Guide", desc: "สรุปประเด็นหลักและคำสำคัญของเอกสารนี้" },
     { title: "Briefing Doc", desc: "สรุปสถาปัตยกรรมระบบและฟังก์ชันสำคัญ" },
@@ -129,7 +77,7 @@ export const ChatPanel: React.FC = () => {
             </div>
 
             <h1 className="text-2xl font-normal text-[#e3e3e3] tracking-tight">Gemcraft Studio</h1>
-            <p className="text-xs text-[#8e918f] mt-1.5 max-w-md leading-relaxed">
+            <p className="text-xs text-[#8e918f] mt-1.5 max-w-md leading-relaxed font-sans">
               Ground your queries in {selectedCount} active source{selectedCount !== 1 ? "s" : ""}.
               Answers are strictly verified against local embeddings.
             </p>
@@ -153,43 +101,80 @@ export const ChatPanel: React.FC = () => {
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 max-w-3xl ${
-                msg.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
-              }`}
-            >
-              {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full bg-[#2b2938] border border-[#484461]/60 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                  <Sparkles className="w-3.5 h-3.5 text-[#c5bfff]" />
-                </div>
-              )}
+          messages.map((msg) => {
+            const isThisStreaming = streamingMessageId === msg.id && isGenerating;
 
+            return (
               <div
-                className={`rounded-2xl p-4 shadow-sm ${
-                  msg.role === "user"
-                    ? "bg-[#28292c] border border-[#444746] text-white rounded-br-none ml-12"
-                    : "bg-[#1e1f20] border border-[#282a2e] text-[#e3e3e3] rounded-bl-none mr-12"
+                key={msg.id}
+                className={`flex gap-3 max-w-3xl ${
+                  msg.role === "user" ? "ml-auto justify-end" : "mr-auto justify-start"
                 }`}
               >
-                {renderMessageContent(msg)}
+                {msg.role === "assistant" && (
+                  <div className="w-7 h-7 rounded-full bg-[#2b2938] border border-[#484461]/60 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-[#c5bfff]" />
+                  </div>
+                )}
+
+                <div
+                  className={`rounded-2xl p-4 shadow-sm w-full ${
+                    msg.role === "user"
+                      ? "bg-[#28292c] border border-[#444746] text-white rounded-br-none ml-12 max-w-lg"
+                      : "bg-[#1e1f20] border border-[#282a2e] text-[#e3e3e3] rounded-bl-none mr-8"
+                  }`}
+                >
+                  {msg.role === "user" ? (
+                    <p className="text-xs text-[#e3e3e3] leading-relaxed whitespace-pre-wrap font-sans">
+                      {msg.content}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Markdown Body */}
+                      <MarkdownContent
+                        content={msg.content}
+                        citations={msg.citations}
+                        activeCitation={activeCitation}
+                        onSelectCitation={handleSelectCitation}
+                        isStreaming={isThisStreaming}
+                      />
+
+                      {/* Footer Actions (Copy & Citations count) */}
+                      {!isThisStreaming && msg.content && (
+                        <div className="pt-2 flex items-center justify-between border-t border-[#282a2e]/60">
+                          <div className="flex items-center gap-1.5">
+                            {msg.citations && msg.citations.length > 0 && (
+                              <div className="flex items-center gap-1 text-[11px] text-[#8e918f]">
+                                <Layers className="w-3 h-3 text-[#a8c7fa]" />
+                                <span>{msg.citations.length} source citation(s)</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMessage(msg.id, msg.content)}
+                              className="p-1.5 rounded-full hover:bg-[#28292c] text-[#8e918f] hover:text-[#e3e3e3] transition-colors cursor-pointer"
+                              title="Copy answer"
+                            >
+                              {copiedId === msg.id ? (
+                                <Check className="w-3.5 h-3.5 text-[#7ada94]" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
 
-        {isGenerating && (
-          <div className="flex gap-3 max-w-3xl mr-auto justify-start animate-in fade-in duration-150">
-            <div className="w-7 h-7 rounded-full bg-[#2b2938] border border-[#484461]/60 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#c5bfff]" />
-            </div>
-            <div className="rounded-2xl rounded-bl-none p-3.5 bg-[#1e1f20] border border-[#282a2e] flex items-center gap-2 text-xs text-[#8e918f]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#a8c7fa] animate-pulse" />
-              <span className="text-[11px] font-sans">Reading sources and generating grounded answer...</span>
-            </div>
-          </div>
-        )}
         <div ref={endOfMessagesRef} />
       </div>
 
@@ -203,10 +188,12 @@ export const ChatPanel: React.FC = () => {
             {/* Sources Chip Indicator */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#131314] text-[11px] text-[#c4c7c5] shrink-0 font-medium">
               <Layers className="w-3 h-3 text-[#a8c7fa]" />
-              <span>{selectedCount} source{selectedCount !== 1 ? "s" : ""}</span>
+              <span>
+                {selectedCount} source{selectedCount !== 1 ? "s" : ""}
+              </span>
             </div>
 
-            {/* Input textarea / text field */}
+            {/* Input textarea */}
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -214,6 +201,8 @@ export const ChatPanel: React.FC = () => {
               placeholder={
                 selectedCount === 0
                   ? "Select at least 1 source to ask questions..."
+                  : isGenerating
+                  ? "Generating response..."
                   : "Ask anything about your sources..."
               }
               rows={1}
@@ -221,19 +210,30 @@ export const ChatPanel: React.FC = () => {
               className="flex-1 bg-transparent px-2 py-1 text-xs text-white placeholder:text-[#8e918f] focus:outline-none resize-none leading-normal font-sans disabled:opacity-50"
             />
 
-            {/* Circular Send Button */}
-            <button
-              type="submit"
-              disabled={!input.trim() || isGenerating || selectedCount === 0}
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
-                input.trim() && !isGenerating && selectedCount > 0
-                  ? "bg-[#a8c7fa] text-[#041e49] hover:bg-[#d3e3fd] shadow-md shadow-[#a8c7fa]/20"
-                  : "bg-[#28292c] text-[#8e918f] opacity-50 cursor-not-allowed"
-              }`}
-              title="Submit Query"
-            >
-              <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            {/* Stop or Submit Button */}
+            {isGenerating ? (
+              <button
+                type="button"
+                onClick={stopGenerating}
+                className="w-8 h-8 rounded-full bg-[#f28b82] hover:bg-[#f6aea9] text-[#041e49] flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-md"
+                title="Stop Generating"
+              >
+                <Square className="w-3.5 h-3.5 fill-current" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim() || selectedCount === 0}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                  input.trim() && selectedCount > 0
+                    ? "bg-[#a8c7fa] text-[#041e49] hover:bg-[#d3e3fd] shadow-md shadow-[#a8c7fa]/20"
+                    : "bg-[#28292c] text-[#8e918f] opacity-50 cursor-not-allowed"
+                }`}
+                title="Submit Query"
+              >
+                <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            )}
           </form>
         </div>
       </div>
