@@ -3,16 +3,11 @@ import {
   Minus,
   Square,
   X,
-  Settings,
-  ShieldCheck,
-  HardDrive,
 } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useSettingsStore } from "../../store/useSettingsStore";
 import { ApiBridge } from "../../services/ipc";
 
 export const Titlebar: React.FC = () => {
-  const { config, setSettingsOpen } = useSettingsStore();
   const [notebookTitle, setNotebookTitle] = useState("Gemcraft Notebook");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const isTauri = ApiBridge.isTauri();
@@ -111,47 +106,8 @@ export const Titlebar: React.FC = () => {
       {/* Middle: Draggable Spacer */}
       <div className="flex-1 h-full" data-tauri-drag-region />
 
-      {/* Right side: Status Pills, Settings & Window Controls */}
-      <div className="flex items-center h-full gap-2">
-        {/* Environment Status Pill */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#131314] border border-[#282a2e] text-[11px] font-medium text-[#c4c7c5]">
-          {isTauri ? (
-            <>
-              <ShieldCheck className="w-3 h-3 text-[#7ada94]" />
-              <span className="font-mono text-[10px] text-[#7ada94]">Tauri Native</span>
-            </>
-          ) : (
-            <>
-              <HardDrive className="w-3 h-3 text-[#ffdd83]" />
-              <span className="font-mono text-[10px] text-[#ffdd83]">Mock Web</span>
-            </>
-          )}
-        </div>
-
-        {/* Model Engine Pill */}
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#131314] border border-[#282a2e] text-[11px] font-medium text-[#c4c7c5]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#a8c7fa] animate-pulse" />
-          <span className="capitalize text-[#e3e3e3]">{config.provider}</span>
-          <span className="text-[#8e918f] font-mono text-[10px]">({config.modelName.split(":")[0]})</span>
-        </div>
-
-        {/* Settings button */}
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="p-1 rounded-full hover:bg-[#282a2e] text-[#c4c7c5] hover:text-white transition-colors cursor-pointer"
-          title="Notebook Settings"
-          aria-label="Settings"
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
-
-        {/* User avatar indicator */}
-        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#694fa8] to-[#9274da] text-white flex items-center justify-center text-[10px] font-semibold shadow-sm ml-0.5 mr-1">
-          P
-        </div>
-
-        {/* Window Controls (Minimize, Maximize, Close) */}
-        <div className="flex items-center h-full -mr-3 border-l border-[#282a2e]/50 pl-1">
+      {/* Right side: Native-style Window Controls */}
+      <div className="flex items-center h-full -mr-3">
           <button
             type="button"
             onClick={handleMinimize}
@@ -182,7 +138,6 @@ export const Titlebar: React.FC = () => {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
     </div>
   );
 };
