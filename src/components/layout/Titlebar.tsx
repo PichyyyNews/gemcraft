@@ -36,7 +36,7 @@ export const Titlebar: React.FC = () => {
       <div className="flex items-center gap-1.5 pointer-events-auto" data-tauri-drag-region>
         {/* App Logo - logo (1).svg */}
         <div
-          className="flex items-center justify-center p-1 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors mr-1.5"
+          className="flex items-center justify-center px-1.5 py-0.5 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors mr-2"
           title="Gemcraft"
         >
           <img
