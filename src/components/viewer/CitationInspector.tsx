@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   X,
-  Sparkles,
   Copy,
   Check,
   FileText,
@@ -18,6 +17,7 @@ import { useChatStore } from "../../store/useChatStore";
 import { useSourceStore } from "../../store/useSourceStore";
 import { formatBytes } from "../../lib/utils";
 import { NotesSection } from "./NotesSection";
+import { GemcraftLogo } from "../common/GemcraftLogo";
 import type { CitationRef } from "../../types/ipc";
 
 export const CitationInspector: React.FC = () => {
@@ -368,7 +368,7 @@ export const CitationInspector: React.FC = () => {
           {/* Studio Header */}
           <div className="p-4 border-b border-[#282a2e] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#c5bfff]" />
+              <GemcraftLogo className="w-4 h-4 object-contain" alt="Studio" />
               <h3 className="text-sm font-medium text-white">Studio</h3>
             </div>
             <span className="text-[11px] text-[#8e918f] font-mono">NotebookLM</span>

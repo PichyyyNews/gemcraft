@@ -3,11 +3,11 @@ import {
   ArrowLeft,
   Settings,
   ShieldCheck,
-  Sparkles,
   HardDrive,
 } from "lucide-react";
 import { useSettingsStore } from "../../store/useSettingsStore";
 import { ApiBridge } from "../../services/ipc";
+import { GemcraftLogo } from "../common/GemcraftLogo";
 
 export const Header: React.FC = () => {
   const { config, setSettingsOpen } = useSettingsStore();
@@ -29,8 +29,8 @@ export const Header: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#2b2938] flex items-center justify-center text-[#c5bfff] border border-[#484461]/40 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="w-7 h-7 rounded-lg bg-[#2b2938] flex items-center justify-center border border-[#484461]/40 shadow-sm p-1">
+            <GemcraftLogo className="w-full h-full object-contain" alt="Gemcraft" />
           </div>
 
           {isEditingTitle ? (
