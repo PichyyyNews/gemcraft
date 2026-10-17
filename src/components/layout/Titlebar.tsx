@@ -5,9 +5,11 @@ import {
   X,
 } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useSettingsStore } from "../../store/useSettingsStore";
 import { ApiBridge } from "../../services/ipc";
 
 export const Titlebar: React.FC = () => {
+  const { setSettingsOpen } = useSettingsStore();
   const [notebookTitle, setNotebookTitle] = useState("Gemcraft Notebook");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const isTauri = ApiBridge.isTauri();
@@ -100,6 +102,22 @@ export const Titlebar: React.FC = () => {
             onClick={() => {}}
           >
             Window
+          </button>
+          <button
+            type="button"
+            className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
+            onClick={() => setSettingsOpen(true)}
+          >
+            Setting
+          </button>
+          <button
+            type="button"
+            className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
+            onClick={() => {
+              alert("Gemcraft v0.1.0\nLocal Grounded RAG NotebookLM Desktop");
+            }}
+          >
+            About
           </button>
         </div>
       </div>
