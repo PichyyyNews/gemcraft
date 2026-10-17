@@ -6,9 +6,12 @@ import {
   Copy,
   Check,
   Layers,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { useChatStore } from "../../store/useChatStore";
 import { useSourceStore } from "../../store/useSourceStore";
+import { useNotesStore } from "../../store/useNotesStore";
 import { MarkdownContent } from "./MarkdownContent";
 import type { CitationRef } from "../../types/ipc";
 
@@ -23,8 +26,10 @@ export const ChatPanel: React.FC = () => {
     activeCitation,
   } = useChatStore();
   const { sources, setActiveDocument } = useSourceStore();
+  const { createNote, notes } = useNotesStore();
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   const selectedSources = sources.filter((s) => s.selected);
@@ -58,6 +63,14 @@ export const ChatPanel: React.FC = () => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const handlePinMessage = (msgId: string, content: string, citations?: CitationRef[]) => {
+    const firstLine = content.split("\n")[0].replace(/^#+\s*/, "").slice(0, 48);
+    const title = firstLine || "Grounded Note";
+    createNote(title, content, citations, msgId);
+    setPinnedId(msgId);
+    setTimeout(() => setPinnedId(null), 2000);
   };
 
   const starterCards = [
@@ -152,6 +165,19 @@ export const ChatPanel: React.FC = () => {
                           </div>
 
                           <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handlePinMessage(msg.id, msg.content, msg.citations)}
+                              className="p-1.5 rounded-full hover:bg-[#28292c] text-[#8e918f] hover:text-[#e3e3e3] transition-colors cursor-pointer"
+                              title="Save to Studio Notes"
+                            >
+                              {pinnedId === msg.id || notes.some((n) => n.sourceMessageId === msg.id) ? (
+                                <BookmarkCheck className="w-3.5 h-3.5 text-[#a8c7fa]" />
+                              ) : (
+                                <Bookmark className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => handleCopyMessage(msg.id, msg.content)}

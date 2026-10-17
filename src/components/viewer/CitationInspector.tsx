@@ -17,6 +17,7 @@ import {
 import { useChatStore } from "../../store/useChatStore";
 import { useSourceStore } from "../../store/useSourceStore";
 import { formatBytes } from "../../lib/utils";
+import { NotesSection } from "./NotesSection";
 import type { CitationRef } from "../../types/ipc";
 
 export const CitationInspector: React.FC = () => {
@@ -452,19 +453,8 @@ export const CitationInspector: React.FC = () => {
               </div>
             </div>
 
-            {/* Notes Section Placeholder (Step 4 preview) */}
-            <div className="space-y-2 pt-2 border-t border-[#282a2e]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#8e918f] tracking-wide">NOTES</span>
-                <span className="text-[10px] text-[#8e918f]">Ready</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl border border-dashed border-[#282a2e] text-center space-y-1.5">
-                <p className="text-xs text-[#8e918f]">
-                  Click citations in chat or select a source to inspect grounded passages.
-                </p>
-              </div>
-            </div>
+            {/* Studio Notes Management Section */}
+            <NotesSection />
           </div>
         </div>
       )}
