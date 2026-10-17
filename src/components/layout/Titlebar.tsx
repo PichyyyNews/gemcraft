@@ -30,19 +30,19 @@ export const Titlebar: React.FC = () => {
   return (
     <div
       data-tauri-drag-region
-      className="h-8 bg-[#1e1f20] border-b border-[#282a2e] flex items-center justify-between select-none shrink-0 z-50 text-[#c4c7c5] text-xs font-sans px-2"
+      className="h-9 bg-[#1e1f20] border-b border-[#282a2e] flex items-center justify-between select-none shrink-0 z-50 text-[#c4c7c5] text-xs font-sans px-3"
     >
       {/* Left side: Logo & Menus */}
-      <div className="flex items-center gap-1.5 pointer-events-auto" data-tauri-drag-region>
+      <div className="flex items-center gap-2 pointer-events-auto" data-tauri-drag-region>
         {/* App Logo - logo (1).svg */}
         <div
-          className="flex items-center justify-center px-1.5 py-0.5 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors mr-2"
+          className="flex items-center justify-center p-1 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors"
           title="Gemcraft"
         >
           <img
             src="/logo (1).svg"
             alt="Gemcraft Logo"
-            className="w-5 h-5 object-contain"
+            className="w-4 h-4 object-contain"
           />
         </div>
 
