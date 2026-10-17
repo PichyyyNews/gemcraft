@@ -1,33 +1,43 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
+import { GemcraftLogo } from "./components/GemcraftLogo";
 import "./App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
+  // Default theme is dark (white logo as main)
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     setGreetMsg(await invoke("greet", { name }));
   }
 
-  return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+  return (
+    <main className={`container app-theme-${theme}`}>
+      <div className="theme-toggle-bar">
+        <button type="button" onClick={toggleTheme} className="theme-btn">
+          Switch to {theme === "dark" ? "Light (Black Logo)" : "Dark (White Logo)"}
+        </button>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+
+      <div className="logo-hero">
+        <GemcraftLogo
+          theme={theme}
+          className="gemcraft-main-logo"
+          style={{ width: "160px", height: "160px" }}
+        />
+      </div>
+
+      <h1>Gemcraft</h1>
+      <p className="subtitle">
+        Local Reverse-Engineered NotebookLM Desktop
+      </p>
 
       <form
         className="row"
@@ -43,9 +53,10 @@ function App() {
         />
         <button type="submit">Greet</button>
       </form>
-      <p>{greetMsg}</p>
+      <p className="greet-msg">{greetMsg}</p>
     </main>
   );
 }
 
 export default App;
+
