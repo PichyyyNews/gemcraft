@@ -41,19 +41,45 @@ export const Titlebar: React.FC = () => {
       {/* Left side: Logo & Menus */}
       <div className="flex items-center gap-2 pointer-events-auto" data-tauri-drag-region>
         {/* App Logo - logo (1).svg */}
+        {/* App Logo - logo (1).svg */}
         <div
-          className="flex items-center justify-center p-1 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors"
+          className="flex items-center justify-center p-0.5 rounded hover:bg-[#282a2e]/60 cursor-pointer transition-colors"
           title="Gemcraft"
         >
           <img
             src="/logo (1).svg"
             alt="Gemcraft Logo"
-            className="w-4 h-4 object-contain"
+            className="w-5 h-5 object-contain"
           />
         </div>
 
+        {/* Notebook Title Pill (Placed before File menu) */}
+        <div className="flex items-center mr-1">
+          {isEditingTitle ? (
+            <input
+              type="text"
+              value={notebookTitle}
+              autoFocus
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setIsEditingTitle(false);
+              }}
+              onChange={(e) => setNotebookTitle(e.target.value)}
+              className="text-xs font-medium bg-[#131314] px-2 py-0.5 rounded border border-[#a8c7fa] focus:outline-none text-white font-sans"
+            />
+          ) : (
+            <button
+              onClick={() => setIsEditingTitle(true)}
+              className="text-xs font-medium text-[#e3e3e3] hover:text-white hover:bg-[#282a2e] px-2 py-0.5 rounded transition-colors text-left flex items-center gap-1.5 cursor-pointer font-sans"
+              title="Click to rename notebook"
+            >
+              <span>{notebookTitle}</span>
+            </button>
+          )}
+        </div>
+
         {/* Window Menu Items */}
-        <div className="flex items-center gap-0.5 text-[#9aa0a6] mr-2">
+        <div className="flex items-center gap-0.5 text-[#9aa0a6]">
           <button
             type="button"
             className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
@@ -75,31 +101,6 @@ export const Titlebar: React.FC = () => {
           >
             Window
           </button>
-        </div>
-
-        {/* Notebook Title Pill */}
-        <div className="flex items-center">
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={notebookTitle}
-              autoFocus
-              onBlur={() => setIsEditingTitle(false)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") setIsEditingTitle(false);
-              }}
-              onChange={(e) => setNotebookTitle(e.target.value)}
-              className="text-xs font-medium bg-[#131314] px-2 py-0.5 rounded border border-[#a8c7fa] focus:outline-none text-white font-sans"
-            />
-          ) : (
-            <button
-              onClick={() => setIsEditingTitle(true)}
-              className="text-xs font-medium text-[#c4c7c5] hover:text-white hover:bg-[#282a2e] px-2 py-0.5 rounded transition-colors text-left flex items-center gap-1.5 cursor-pointer font-sans"
-              title="Click to rename notebook"
-            >
-              <span>{notebookTitle}</span>
-            </button>
-          )}
         </div>
       </div>
 
