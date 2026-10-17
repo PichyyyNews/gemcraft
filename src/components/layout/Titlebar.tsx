@@ -1,0 +1,114 @@
+import React from "react";
+import { Minus, Square, X } from "lucide-react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ApiBridge } from "../../services/ipc";
+
+export const Titlebar: React.FC = () => {
+  const isTauri = ApiBridge.isTauri();
+
+  const handleMinimize = async () => {
+    if (isTauri) {
+      const appWindow = getCurrentWindow();
+      await appWindow.minimize();
+    }
+  };
+
+  const handleToggleMaximize = async () => {
+    if (isTauri) {
+      const appWindow = getCurrentWindow();
+      await appWindow.toggleMaximize();
+    }
+  };
+
+  const handleClose = async () => {
+    if (isTauri) {
+      const appWindow = getCurrentWindow();
+      await appWindow.close();
+    }
+  };
+
+  return (
+    <div
+      data-tauri-drag-region
+      className="h-8 bg-[#18191a] border-b border-[#282a2e] flex items-center justify-between select-none shrink-0 z-50 text-[#c4c7c5] text-xs font-sans px-2"
+    >
+      {/* Left side: Logo & Menus */}
+      <div className="flex items-center gap-1.5 pointer-events-auto" data-tauri-drag-region>
+        {/* App Logo */}
+        <div
+          className="flex items-center gap-1.5 px-1.5 py-0.5 rounded hover:bg-[#282a2e]/50 cursor-pointer transition-colors mr-1"
+          title="Gemcraft"
+        >
+          <img
+            src="/logo-white.svg"
+            alt="Gemcraft"
+            className="w-4 h-4 object-contain"
+          />
+          <span className="font-medium text-[#e3e3e3] text-[13px] tracking-tight">Gemcraft</span>
+        </div>
+
+        {/* Window Menu Items */}
+        <div className="flex items-center gap-0.5 text-[#9aa0a6]">
+          <button
+            type="button"
+            className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
+            onClick={() => {}}
+          >
+            File
+          </button>
+          <button
+            type="button"
+            className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
+            onClick={() => {}}
+          >
+            View
+          </button>
+          <button
+            type="button"
+            className="px-2 py-0.5 rounded hover:bg-[#282a2e] hover:text-[#e3e3e3] transition-colors cursor-pointer text-xs"
+            onClick={() => {}}
+          >
+            Window
+          </button>
+        </div>
+      </div>
+
+      {/* Middle: Draggable Spacer */}
+      <div className="flex-1 h-full" data-tauri-drag-region />
+
+      {/* Right side: Native-style Window Controls */}
+      <div className="flex items-center h-full -mr-2">
+        <button
+          type="button"
+          onClick={handleMinimize}
+          className="h-full px-3.5 flex items-center justify-center hover:bg-[#282a2e] text-[#c4c7c5] hover:text-white transition-colors cursor-pointer"
+          title="Minimize"
+          aria-label="Minimize"
+        >
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleToggleMaximize}
+          className="h-full px-3.5 flex items-center justify-center hover:bg-[#282a2e] text-[#c4c7c5] hover:text-white transition-colors cursor-pointer"
+          title="Maximize"
+          aria-label="Maximize"
+        >
+          <Square className="w-3 h-3" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleClose}
+          className="h-full px-3.5 flex items-center justify-center hover:bg-[#e81123] text-[#c4c7c5] hover:text-white transition-colors cursor-pointer"
+          title="Close"
+          aria-label="Close"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+};
+export default Titlebar;

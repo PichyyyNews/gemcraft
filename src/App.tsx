@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Titlebar } from "./components/layout/Titlebar";
 import { Header } from "./components/layout/Header";
 import { SourcesPanel } from "./components/sources/SourcesPanel";
 import { ChatPanel } from "./components/chat/ChatPanel";
@@ -18,6 +19,9 @@ export function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+      {/* Top Frameless Titlebar */}
+      <Titlebar />
+
       {/* Top Application Header */}
       <Header />
 
