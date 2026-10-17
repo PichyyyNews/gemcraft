@@ -1,28 +1,27 @@
 import React from "react";
 import { X, ExternalLink, Bookmark, Sparkles, BookOpen } from "lucide-react";
-import type { CitationRef, SourceDocument } from "../types/ipc";
+import { useChatStore } from "../../store/useChatStore";
+import { useSourceStore } from "../../store/useSourceStore";
 
-interface CitationInspectorProps {
-  activeCitation: CitationRef | null;
-  activeDocument: SourceDocument | null;
-  onClose: () => void;
-}
+export const CitationInspector: React.FC = () => {
+  const { activeCitation, setActiveCitation } = useChatStore();
+  const { activeDocument, setActiveDocument } = useSourceStore();
 
-export const CitationInspector: React.FC<CitationInspectorProps> = ({
-  activeCitation,
-  activeDocument,
-  onClose,
-}) => {
   if (!activeCitation && !activeDocument) {
     return null;
   }
+
+  const handleClose = () => {
+    setActiveCitation(null);
+    setActiveDocument(null);
+  };
 
   const title = activeCitation
     ? `Citation [^${activeCitation.citationIndex}] Evidence`
     : activeDocument?.name || "Document Preview";
 
   return (
-    <aside className="w-96 h-full border-l border-slate-800 bg-slate-900/90 flex flex-col shrink-0 animate-in slide-in-from-right duration-200 z-10 shadow-2xl">
+    <aside className="w-96 h-full border-l border-slate-800 bg-slate-900/90 flex flex-col shrink-0 animate-in slide-in-from-right duration-200 z-10 shadow-2xl select-none">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
         <div className="flex items-center gap-2">
@@ -34,7 +33,7 @@ export const CitationInspector: React.FC<CitationInspectorProps> = ({
           <h3 className="text-xs font-semibold text-slate-200 tracking-wide">{title}</h3>
         </div>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
           title="Close Inspector"
         >
@@ -60,7 +59,8 @@ export const CitationInspector: React.FC<CitationInspectorProps> = ({
           </div>
           {activeCitation?.pageNumber && (
             <div className="text-[11px] text-slate-400">
-              Page / Section: <span className="text-slate-200 font-mono">Page {activeCitation.pageNumber}</span>
+              Page / Section:{" "}
+              <span className="text-slate-200 font-mono">Page {activeCitation.pageNumber}</span>
             </div>
           )}
         </div>
@@ -73,7 +73,7 @@ export const CitationInspector: React.FC<CitationInspectorProps> = ({
               <span>Grounded Excerpt from Local Vector Store:</span>
             </div>
 
-            <blockquote className="p-3.5 rounded-lg bg-cyan-950/20 border-l-2 border-cyan-500 text-xs text-slate-200 leading-relaxed font-mono shadow-inner">
+            <blockquote className="p-3.5 rounded-lg bg-cyan-950/20 border-l-2 border-cyan-500 text-xs text-slate-200 leading-relaxed font-mono shadow-inner select-text">
               "{activeCitation.snippet}"
             </blockquote>
           </div>

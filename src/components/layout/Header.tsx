@@ -1,14 +1,12 @@
 import React from "react";
 import { Cpu, Settings, ShieldCheck, Terminal } from "lucide-react";
-import type { LlmConfig } from "../types/ipc";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import { ApiBridge } from "../../services/ipc";
 
-interface HeaderProps {
-  config: LlmConfig;
-  onOpenSettings: () => void;
-  isTauri: boolean;
-}
+export const Header: React.FC = () => {
+  const { config, setSettingsOpen } = useSettingsStore();
+  const isTauri = ApiBridge.isTauri();
 
-export const Header: React.FC<HeaderProps> = ({ config, onOpenSettings, isTauri }) => {
   return (
     <header className="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 flex items-center justify-between select-none shrink-0 z-10">
       <div className="flex items-center gap-3">
@@ -44,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ config, onOpenSettings, isTauri 
 
         {/* Settings Button */}
         <button
-          onClick={onOpenSettings}
+          onClick={() => setSettingsOpen(true)}
           className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer border border-transparent hover:border-slate-700"
           title="Configuration & LLM Settings"
           aria-label="Open Settings"

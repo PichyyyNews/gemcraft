@@ -1,33 +1,27 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Sparkles, AlertCircle, Quote } from "lucide-react";
-import type { ChatMessage, CitationRef } from "../types/ipc";
+import { useChatStore } from "../../store/useChatStore";
+import { useSourceStore } from "../../store/useSourceStore";
+import type { ChatMessage, CitationRef } from "../../types/ipc";
 
-interface ChatPanelProps {
-  messages: ChatMessage[];
-  loading: boolean;
-  selectedSourceCount: number;
-  onSendMessage: (query: string) => void;
-  onSelectCitation: (citation: CitationRef) => void;
-}
-
-export const ChatPanel: React.FC<ChatPanelProps> = ({
-  messages,
-  loading,
-  selectedSourceCount,
-  onSendMessage,
-  onSelectCitation,
-}) => {
+export const ChatPanel: React.FC = () => {
+  const { messages, isGenerating, sendMessage, setActiveCitation } = useChatStore();
+  const { sources, setActiveDocument } = useSourceStore();
   const [input, setInput] = useState("");
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
+  const selectedSources = sources.filter((s) => s.selected);
+  const selectedCount = selectedSources.length;
+  const selectedSourceIds = selectedSources.map((s) => s.id);
+
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, isGenerating]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
-    onSendMessage(input.trim());
+    if (!input.trim() || isGenerating) return;
+    sendMessage(input.trim(), selectedSourceIds);
     setInput("");
   };
 
@@ -38,12 +32,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     }
   };
 
+  const handleSelectCitation = (citation: CitationRef) => {
+    setActiveCitation(citation);
+    setActiveDocument(null);
+  };
+
   const renderMessageContent = (msg: ChatMessage) => {
     if (msg.role === "user") {
       return <p className="text-sm text-slate-100 whitespace-pre-wrap">{msg.content}</p>;
     }
 
-    // Split text by citation pattern like [^1], [^2]
     const parts = msg.content.split(/(\[\^[0-9]+\])/g);
 
     return (
@@ -58,7 +56,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               return (
                 <button
                   key={index}
-                  onClick={() => citation && onSelectCitation(citation)}
+                  onClick={() => citation && handleSelectCitation(citation)}
                   className="inline-flex items-center justify-center mx-1 px-1.5 py-0.2 rounded text-[11px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800/80 hover:bg-cyan-900 hover:text-cyan-200 hover:border-cyan-500 transition-all cursor-pointer shadow-sm"
                   title={citation ? `Source: ${citation.sourceName}` : `Citation ${citationIndex}`}
                 >
@@ -71,7 +69,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           })}
         </p>
 
-        {/* Citations Footer summary */}
         {msg.citations && msg.citations.length > 0 && (
           <div className="pt-2 border-t border-slate-800/80 mt-3 flex flex-wrap gap-1.5">
             <span className="text-[11px] text-slate-500 flex items-center gap-1 mr-1">
@@ -81,7 +78,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             {msg.citations.map((c) => (
               <button
                 key={c.citationIndex}
-                onClick={() => onSelectCitation(c)}
+                onClick={() => handleSelectCitation(c)}
                 className="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-600 hover:text-cyan-300 transition-all cursor-pointer"
               >
                 <span className="font-mono text-cyan-400 font-bold">[{c.citationIndex}]</span>
@@ -108,10 +105,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
           <span>
             Grounded against{" "}
-            <strong className="text-slate-200">{selectedSourceCount} selected source(s)</strong>
+            <strong className="text-slate-200">{selectedCount} selected source(s)</strong>
           </span>
         </div>
-        {selectedSourceCount === 0 && (
+        {selectedCount === 0 && (
           <div className="flex items-center gap-1.5 text-amber-400 text-[11px]">
             <AlertCircle className="w-3.5 h-3.5" />
             <span>Please select at least 1 source to ground answers</span>
@@ -136,7 +133,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               {samplePrompts.map((prompt, idx) => (
                 <button
                   key={idx}
-                  onClick={() => onSendMessage(prompt)}
+                  onClick={() => sendMessage(prompt, selectedSourceIds)}
                   className="p-3 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-900 hover:border-cyan-700/60 transition-all text-xs text-slate-300 hover:text-slate-100 cursor-pointer flex items-center justify-between group shadow-sm"
                 >
                   <span>{prompt}</span>
@@ -178,7 +175,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           ))
         )}
 
-        {loading && (
+        {isGenerating && (
           <div className="flex gap-3 max-w-3xl mr-auto justify-start animate-in fade-in duration-200">
             <div className="w-7 h-7 rounded-lg bg-cyan-950 border border-cyan-800/80 flex items-center justify-center shrink-0 mt-0.5">
               <Bot className="w-4 h-4 text-cyan-400" />
@@ -202,17 +199,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={
-              selectedSourceCount === 0
+              selectedCount === 0
                 ? "เลือกเอกสารอย่างน้อย 1 รายการเพื่อเริ่มถาม..."
                 : "ถามคำถามเกี่ยวกับเอกสารที่เลือก... (กด Enter เพื่อส่ง)"
             }
             rows={1}
-            disabled={selectedSourceCount === 0 || loading}
+            disabled={selectedCount === 0 || isGenerating}
             className="w-full pl-3.5 pr-12 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-500 focus:outline-none text-xs text-slate-200 placeholder:text-slate-500 resize-none disabled:opacity-50 transition-all shadow-inner"
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading || selectedSourceCount === 0}
+            disabled={!input.trim() || isGenerating || selectedCount === 0}
             className="absolute right-2 p-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-30 disabled:hover:bg-cyan-600 transition-all cursor-pointer shadow-sm shadow-cyan-600/30"
             title="Send Message"
           >

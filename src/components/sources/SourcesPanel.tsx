@@ -10,38 +10,37 @@ import {
   Database,
   Layers,
 } from "lucide-react";
-import type { SourceDocument } from "../types/ipc";
-import { formatBytes } from "../lib/utils";
+import { useSourceStore } from "../../store/useSourceStore";
+import { useChatStore } from "../../store/useChatStore";
+import { formatBytes } from "../../lib/utils";
+import type { SupportedFileType } from "../../types/ipc";
 
-interface SourcesPanelProps {
-  sources: SourceDocument[];
-  onToggleSource: (id: string, selected: boolean) => void;
-  onAddSource: (fileName: string, fileType: "pdf" | "markdown" | "txt", byteSize: number) => void;
-  onDeleteSource: (id: string) => void;
-  onSelectDocumentForPreview: (source: SourceDocument) => void;
-}
-
-export const SourcesPanel: React.FC<SourcesPanelProps> = ({
-  sources,
-  onToggleSource,
-  onAddSource,
-  onDeleteSource,
-  onSelectDocumentForPreview,
-}) => {
+export const SourcesPanel: React.FC = () => {
+  const {
+    sources,
+    toggleSource,
+    addSource,
+    deleteSource,
+    setActiveDocument,
+  } = useSourceStore();
+  const { setActiveCitation } = useChatStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedCount = sources.filter((s) => s.selected).length;
-  const totalChunks = sources.reduce((acc, curr) => (curr.selected ? acc + curr.chunkCount : acc), 0);
+  const totalChunks = sources.reduce(
+    (acc, curr) => (curr.selected ? acc + curr.chunkCount : acc),
+    0
+  );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    let fileType: "pdf" | "markdown" | "txt" = "txt";
+    let fileType: SupportedFileType = "txt";
     if (file.name.endsWith(".pdf")) fileType = "pdf";
     else if (file.name.endsWith(".md")) fileType = "markdown";
 
-    onAddSource(file.name, fileType, file.size);
+    addSource(file.name, fileType, file.size);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -52,7 +51,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
       { name: "ollama_endpoint_guide.txt", type: "txt" as const, size: 3200 },
     ];
     const pick = samples[Math.floor(Math.random() * samples.length)];
-    onAddSource(pick.name, pick.type, pick.size);
+    addSource(pick.name, pick.type, pick.size);
   };
 
   const getFileIcon = (type: string) => {
@@ -66,8 +65,13 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
     }
   };
 
+  const handleSelectDoc = (src: (typeof sources)[0]) => {
+    setActiveDocument(src);
+    setActiveCitation(null);
+  };
+
   return (
-    <aside className="w-80 h-full border-r border-slate-800 bg-slate-900/60 flex flex-col shrink-0">
+    <aside className="w-80 h-full border-r border-slate-800 bg-slate-900/60 flex flex-col shrink-0 select-none">
       {/* Panel Header */}
       <div className="p-3.5 border-b border-slate-800/80 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -138,7 +142,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
             >
               <div className="flex items-start justify-between gap-2">
                 <button
-                  onClick={() => onToggleSource(src.id, !src.selected)}
+                  onClick={() => toggleSource(src.id, !src.selected)}
                   className="mt-0.5 text-slate-400 hover:text-cyan-400 transition-colors cursor-pointer shrink-0"
                   title={src.selected ? "Disable from context" : "Include in context"}
                 >
@@ -151,7 +155,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
 
                 <div
                   className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => onSelectDocumentForPreview(src)}
+                  onClick={() => handleSelectDoc(src)}
                 >
                   <div className="flex items-center gap-1.5">
                     {getFileIcon(src.fileType)}
@@ -162,7 +166,7 @@ export const SourcesPanel: React.FC<SourcesPanelProps> = ({
                 </div>
 
                 <button
-                  onClick={() => onDeleteSource(src.id)}
+                  onClick={() => deleteSource(src.id)}
                   className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-rose-400 transition-all rounded hover:bg-slate-800 cursor-pointer"
                   title="Remove Source"
                 >

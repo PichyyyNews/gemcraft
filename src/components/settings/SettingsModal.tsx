@@ -1,24 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Check, Server, Key, Sliders, Cpu } from "lucide-react";
-import type { LlmConfig, LlmProviderType } from "../types/ipc";
+import { useSettingsStore } from "../../store/useSettingsStore";
+import type { LlmConfig, LlmProviderType } from "../../types/ipc";
 
-interface SettingsModalProps {
-  config: LlmConfig;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (config: LlmConfig) => void;
-}
-
-export const SettingsModal: React.FC<SettingsModalProps> = ({
-  config,
-  isOpen,
-  onClose,
-  onSave,
-}) => {
+export const SettingsModal: React.FC = () => {
+  const { config, isSettingsOpen, setSettingsOpen, saveConfig } = useSettingsStore();
   const [formData, setFormData] = useState<LlmConfig>({ ...config });
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setFormData({ ...config });
+  }, [config, isSettingsOpen]);
+
+  if (!isSettingsOpen) return null;
 
   const handleProviderChange = (provider: LlmProviderType) => {
     let endpointUrl = formData.endpointUrl;
@@ -43,18 +37,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    await saveConfig(formData);
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
-      onClose();
+      setSettingsOpen(false);
     }, 600);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">
       <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
@@ -63,7 +57,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <h3 className="text-sm font-semibold text-slate-100">LLM & Inference Configuration</h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => setSettingsOpen(false)}
             className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -164,7 +158,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => setSettingsOpen(false)}
               className="px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
             >
               Cancel
