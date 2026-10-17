@@ -1,50 +1,200 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { useState, useEffect } from "react";
+import { Header } from "./components/Header";
+import { SourcesPanel } from "./components/SourcesPanel";
+import { ChatPanel } from "./components/ChatPanel";
+import { CitationInspector } from "./components/CitationInspector";
+import { SettingsModal } from "./components/SettingsModal";
+import { ApiBridge } from "./services/ipc";
+import type {
+  SourceDocument,
+  ChatMessage,
+  CitationRef,
+  LlmConfig,
+} from "./types/ipc";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+export function App() {
+  const [sources, setSources] = useState<SourceDocument[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [config, setConfig] = useState<LlmConfig>({
+    provider: "ollama",
+    endpointUrl: "http://localhost:11434",
+    modelName: "llama3.2:latest",
+    temperature: 0.2,
+  });
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  const [activeCitation, setActiveCitation] = useState<CitationRef | null>(null);
+  const [activeDocument, setActiveDocument] = useState<SourceDocument | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  const isTauri = ApiBridge.isTauri();
+
+  useEffect(() => {
+    // Initial fetch of sources and configuration
+    const init = async () => {
+      try {
+        const [loadedSources, loadedConfig] = await Promise.all([
+          ApiBridge.getSources(),
+          ApiBridge.getConfig(),
+        ]);
+        setSources(loadedSources);
+        setConfig(loadedConfig);
+      } catch (err) {
+        console.error("Failed to initialize workspace data", err);
+      }
+    };
+    init();
+  }, []);
+
+  const handleToggleSource = async (id: string, selected: boolean) => {
+    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, selected } : s)));
+    try {
+      await ApiBridge.toggleSourceSelection(id, selected);
+    } catch (err) {
+      console.error("Error toggling source selection", err);
+    }
+  };
+
+  const handleAddSource = async (
+    fileName: string,
+    fileType: "pdf" | "markdown" | "txt",
+    byteSize: number
+  ) => {
+    try {
+      const res = await ApiBridge.ingestDocument(fileName, fileType, byteSize);
+      if (res.success && res.source) {
+        setSources((prev) => [res.source!, ...prev]);
+        setActiveDocument(res.source);
+        setActiveCitation(null);
+      }
+    } catch (err) {
+      console.error("Error ingesting source", err);
+    }
+  };
+
+  const handleDeleteSource = async (id: string) => {
+    try {
+      const success = await ApiBridge.deleteSource(id);
+      if (success) {
+        setSources((prev) => prev.filter((s) => s.id !== id));
+        if (activeDocument?.id === id) {
+          setActiveDocument(null);
+        }
+      }
+    } catch (err) {
+      console.error("Error deleting source", err);
+    }
+  };
+
+  const handleSendMessage = async (query: string) => {
+    const selectedSourceIds = sources.filter((s) => s.selected).map((s) => s.id);
+    if (selectedSourceIds.length === 0) return;
+
+    const userMessage: ChatMessage = {
+      id: `usr-${Date.now()}`,
+      role: "user",
+      content: query,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setLoading(true);
+
+    try {
+      const assistantMessage = await ApiBridge.queryRag({
+        query,
+        selectedSourceIds,
+      });
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Automatically open the first citation in inspector if available
+      if (assistantMessage.citations && assistantMessage.citations.length > 0) {
+        setActiveCitation(assistantMessage.citations[0]);
+        setActiveDocument(null);
+      }
+    } catch (err) {
+      console.error("Error querying RAG", err);
+      const errorMessage: ChatMessage = {
+        id: `err-${Date.now()}`,
+        role: "assistant",
+        content: "เกิดข้อผิดพลาดในการเชื่อมต่อกับ Inference Engine กรุณาตรวจสอบการตั้งค่า Provider",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectCitation = (citation: CitationRef) => {
+    setActiveCitation(citation);
+    setActiveDocument(null);
+  };
+
+  const handleSelectDocumentForPreview = (source: SourceDocument) => {
+    setActiveDocument(source);
+    setActiveCitation(null);
+  };
+
+  const handleSaveConfig = async (newConfig: LlmConfig) => {
+    setConfig(newConfig);
+    try {
+      await ApiBridge.saveConfig(newConfig);
+    } catch (err) {
+      console.error("Error saving config", err);
+    }
+  };
+
+  const selectedCount = sources.filter((s) => s.selected).length;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div className="h-screen w-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden">
+      {/* Top Application Header */}
+      <Header
+        config={config}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        isTauri={isTauri}
+      />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+      {/* 3-Column Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column: Knowledge Sources Panel */}
+        <SourcesPanel
+          sources={sources}
+          onToggleSource={handleToggleSource}
+          onAddSource={handleAddSource}
+          onDeleteSource={handleDeleteSource}
+          onSelectDocumentForPreview={handleSelectDocumentForPreview}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+
+        {/* Center Column: Grounded Chat & Citations */}
+        <ChatPanel
+          messages={messages}
+          loading={loading}
+          selectedSourceCount={selectedCount}
+          onSendMessage={handleSendMessage}
+          onSelectCitation={handleSelectCitation}
+        />
+
+        {/* Right Column: Citation & Document Inspector */}
+        <CitationInspector
+          activeCitation={activeCitation}
+          activeDocument={activeDocument}
+          onClose={() => {
+            setActiveCitation(null);
+            setActiveDocument(null);
+          }}
+        />
+      </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        config={config}
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveConfig}
+      />
+    </div>
   );
 }
 
