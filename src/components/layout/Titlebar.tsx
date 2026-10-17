@@ -30,7 +30,7 @@ export const Titlebar: React.FC = () => {
   return (
     <div
       data-tauri-drag-region
-      className="h-8 bg-[#18191a] border-b border-[#282a2e] flex items-center justify-between select-none shrink-0 z-50 text-[#c4c7c5] text-xs font-sans px-2"
+      className="h-8 bg-[#1e1f20] border-b border-[#282a2e] flex items-center justify-between select-none shrink-0 z-50 text-[#c4c7c5] text-xs font-sans px-2"
     >
       {/* Left side: Logo & Menus */}
       <div className="flex items-center gap-1.5 pointer-events-auto" data-tauri-drag-region>
