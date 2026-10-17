@@ -29,9 +29,7 @@ export const Header: React.FC = () => {
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#2b2938] flex items-center justify-center border border-[#484461]/40 shadow-sm p-1">
-            <GemcraftLogo className="w-full h-full object-contain" alt="Gemcraft" />
-          </div>
+          <GemcraftLogo className="w-6 h-6 object-contain" alt="Gemcraft" />
 
           {isEditingTitle ? (
             <input

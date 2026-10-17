@@ -85,8 +85,8 @@ export const ChatPanel: React.FC = () => {
       <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6">
         {messages.length === 0 ? (
           <div className="max-w-2xl mx-auto h-full flex flex-col items-center justify-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-[#28292c] border border-[#444746] flex items-center justify-center mb-4 shadow-md p-2.5">
-              <GemcraftLogo className="w-full h-full object-contain" alt="Gemcraft Logo" />
+            <div className="mb-4 flex items-center justify-center">
+              <GemcraftLogo className="w-20 h-20 object-contain drop-shadow-lg" alt="Gemcraft Studio Logo" />
             </div>
 
             <h1 className="text-2xl font-normal text-[#e3e3e3] tracking-tight">Gemcraft Studio</h1>

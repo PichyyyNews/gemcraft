@@ -368,8 +368,8 @@ export const CitationInspector: React.FC = () => {
           {/* Studio Header */}
           <div className="p-4 border-b border-[#282a2e] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <GemcraftLogo className="w-4 h-4 object-contain" alt="Studio" />
-              <h3 className="text-sm font-medium text-white">Studio</h3>
+              <GemcraftLogo className="w-5.5 h-5.5 object-contain" alt="Studio" />
+              <h3 className="text-sm font-semibold text-white tracking-tight">Studio</h3>
             </div>
             <span className="text-[11px] text-[#8e918f] font-mono">NotebookLM</span>
           </div>
